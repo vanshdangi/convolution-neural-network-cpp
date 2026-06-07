@@ -55,4 +55,7 @@ public:
     Tensor& operator-=(const Tensor& other);
     Tensor& operator*=(float scalar);
     Tensor& operator/=(float scalar);
+
+    // Visualize tensor
+    void Tensor::print() const;
 };
