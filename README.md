@@ -1,2 +1,3 @@
-# deep-learning-framework-cpp
-A deep learning framework built from scratch in C++, implementing convolutional neural networks with manual forward and backward propagation.
+# convolution-neural-network-cpp
+
+A Convolutional Neural Network (CNN) implemented from scratch in C++ featuring a custom tensor class, manual forward and backward propagation, and training on the CIFAR-10 dataset.
