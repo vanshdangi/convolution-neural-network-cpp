@@ -15,6 +15,10 @@ add_executable(convolution_neural_network
     src/layers/relu.cpp
     src/layers/max_pool2d.cpp
     src/layers/flatten.cpp
+    src/layers/dense.cpp
+
+    #Loss
+    src/loss/softmax_cross_entropy_loss.cpp
 )
 
 target_include_directories(convolution_neural_network PRIVATE
