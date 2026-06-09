@@ -9,6 +9,10 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 add_executable(convolution_neural_network
     src/main.cpp
     src/math/tensor.cpp
+
+    #layers
+    src/layers/conv2d.cpp
+    src/layers/relu.cpp
 )
 
 target_include_directories(convolution_neural_network PRIVATE

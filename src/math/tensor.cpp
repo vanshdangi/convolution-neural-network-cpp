@@ -50,6 +50,29 @@ void Tensor::resize(int r, int c, int d){
     data.resize(r*c*d);
 }
 
+Tensor Tensor::pad(int pad)
+{
+    Tensor result(
+        rows + 2 * pad,
+        cols + 2 * pad,
+        depth
+    );
+
+    for (int r = 0; r < rows; r++)
+    {
+        for (int c = 0; c < cols; c++)
+        {
+            for (int d = 0; d < depth; d++)
+            {
+                result(r + pad, c + pad, d) =
+                    (*this)(r, c, d);
+            }
+        }
+    }
+
+    return result;
+}
+
 // Helpers
 int Tensor::size() const{
     return rows*cols*depth;

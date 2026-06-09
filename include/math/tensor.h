@@ -23,6 +23,7 @@ public:
     void fill(float value);
     void randomize(float min = -0.1f, float max = 0.1f);
     void resize(int r, int c, int d);
+    Tensor Tensor::pad(int pad);
 
     // Helpers
     int size() const;
