@@ -19,6 +19,12 @@ add_executable(convolution_neural_network
 
     #Loss
     src/loss/softmax_cross_entropy_loss.cpp
+
+    #Network
+    src/network/network.cpp
+
+    #Trainin
+    src/training/trainer.cpp
 )
 
 target_include_directories(convolution_neural_network PRIVATE
