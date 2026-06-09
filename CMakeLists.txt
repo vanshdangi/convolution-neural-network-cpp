@@ -25,6 +25,7 @@ add_executable(convolution_neural_network
 
     #Trainin
     src/training/trainer.cpp
+    src/training/cifar_10.cpp
 )
 
 target_include_directories(convolution_neural_network PRIVATE

@@ -2,16 +2,20 @@
 #include "math/tensor.h"
 #include "network/network.h"
 #include "loss./softmax_cross_entropy_loss.h"
+#include "training/trainer.h"
+#include "training/cifar_10.h"
 
 int main() {
 
-    Tensor x(32, 32, 3);
-    x.randomize();
+    CIFAR10 dataset("data/");
+
+    std::cout << "Img-1 :: " << dataset.train[0].label << '\n';
+
 
     Network net;
     SoftmaxCrossEntropyLoss loss_fn;
 
-    Tensor logits = net.forward(x);
+    Tensor logits = net.forward(dataset.train[0].image);
 
     for (int i = 0; i < logits.rows; i++)
     {
