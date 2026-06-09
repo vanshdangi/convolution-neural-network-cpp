@@ -24,5 +24,4 @@ public:
     Network();
     Tensor forward(const Tensor& x);
     void backward(const Tensor& grad_logits);
-    Tensor image_to_tensor(const std::vector<float>& image);
 };

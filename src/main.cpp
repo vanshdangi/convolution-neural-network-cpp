@@ -22,9 +22,17 @@ int main() {
         std::cout << logits(i,0,0) << '\n';
     }
 
-    float loss = loss_fn.forward(logits, 3);
+    float loss = loss_fn.forward(logits, dataset.train[0].label);
 
     std::cout << "Loss :: " << loss << '\n';
+
+    Tensor grad = loss_fn.backward();
+    std::cout << "GRADIENT" << "\n";
+    for (int i = 0; i < grad.rows; i++)
+    {
+        std::cout << grad(i,0,0) << "\n";
+    }
+    
 
 
 

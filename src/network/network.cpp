@@ -24,6 +24,12 @@ Tensor Network::forward(const Tensor& x) {
     return out; // logits (10 × 1)
 }
 
+void Network::backward(const Tensor& grad_logits){
+    // grad_logits: (10 × 1)
+    
+    Tensor grad = grad_logits;
+}
+
 /*
 32x32x3
 -> Conv(16,3)

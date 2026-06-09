@@ -24,3 +24,14 @@ float SoftmaxCrossEntropyLoss::forward(const Tensor& logits, int lbl) {
 
     return -std::log(probs(label, 0, 0) + 1e-9f);
 }
+
+Tensor SoftmaxCrossEntropyLoss::backward() {
+    Tensor grad(probs.rows, 1, 1);
+
+    for (int i = 0; i < probs.rows; i++){
+        grad(i, 0, 0) = probs(i, 0, 0);
+    }
+    grad(label, 0, 0) -= 1.0f;
+
+    return grad;
+}
