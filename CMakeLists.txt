@@ -14,6 +14,7 @@ add_executable(convolution_neural_network
     src/layers/conv2d.cpp
     src/layers/relu.cpp
     src/layers/max_pool2d.cpp
+    src/layers/flatten.cpp
 )
 
 target_include_directories(convolution_neural_network PRIVATE

@@ -2,8 +2,7 @@
 #include "math/tensor.h"
 #include <iostream>
 
-class Conv2d
-{
+class Conv2d {
 public:
     Tensor input;
     int kernel_size;
@@ -16,4 +15,5 @@ public:
     Conv2d(int in_channels, int out_channels, int kernel_size);
 
     Tensor forward(const Tensor& x);
+    Tensor backward(const Tensor& grad_out);
 };
