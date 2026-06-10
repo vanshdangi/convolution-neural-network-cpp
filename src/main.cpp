@@ -27,14 +27,7 @@ int main() {
     std::cout << "Loss :: " << loss << '\n';
 
     Tensor grad = loss_fn.backward();
-    std::cout << "GRADIENT" << "\n";
-    for (int i = 0; i < grad.rows; i++)
-    {
-        std::cout << grad(i,0,0) << "\n";
-    }
+    net.backward(grad);
     
-
-
-
     return 0;
 }

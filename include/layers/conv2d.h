@@ -9,6 +9,9 @@ public:
     std::vector<Tensor> filters;
     Tensor bias;
 
+    std::vector<Tensor> dW;
+    Tensor db;
+
     // in_channels = depth on input
     // out_channels = number of filters
     // kernel_size = size of filter
