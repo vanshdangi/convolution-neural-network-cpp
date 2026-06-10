@@ -60,3 +60,7 @@ Tensor Conv2d::forward(const Tensor& x){
 
     return output;
 }
+
+Tensor Conv2d::backward(const Tensor& grad_out){
+    
+}

@@ -28,6 +28,17 @@ void Network::backward(const Tensor& grad_logits){
     // grad_logits: (10 × 1)
     
     Tensor grad = grad_logits;
+
+    grad = d2.backward(grad);
+    grad = r3.backward(grad);
+    grad = d1.backward(grad);
+    grad = flatten.backward(grad);
+    grad = maxPool2.backward(grad);
+    grad = r2.backward(grad);
+    grad = conv2.backward(grad);
+    grad = maxPool1.backward(grad);
+    grad = r1.backward(grad);
+    grad = conv1.backward(grad);
 }
 
 /*

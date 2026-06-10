@@ -17,7 +17,7 @@ Tensor MaxPool2D::forward(const Tensor& x){
                 int start_col = j*2;
 
                 float max_val = x(start_row, start_col, d);
-                float max_idx = start_row * x.cols + start_col;
+                int max_idx = start_row * x.cols * x.depth + start_col * x.depth + d;
 
                 //Find max inside 2x2 pool
                 for(int r = 0; r < 2; r++){
@@ -27,7 +27,7 @@ Tensor MaxPool2D::forward(const Tensor& x){
 
                         if(x(row,col,d) > max_val){
                             max_val = x(row,col,d);
-                            max_idx = row*x.cols + col;
+                            max_idx = row*x.cols*x.depth + col*x.depth + d;
                         }
                     }
                 }
@@ -37,4 +37,21 @@ Tensor MaxPool2D::forward(const Tensor& x){
         }
     }
     return output;
+}
+
+Tensor MaxPool2D::backward(const Tensor& grad_out){
+
+    Tensor grad(input.rows, input.cols, input.depth);
+    int index = 0;
+
+    for(int i = 0; i < grad_out.depth; i++){
+        for(int j = 0; j < grad_out.rows; j++){
+            for(int k = 0; k < grad_out.cols; k++){
+                grad.data[max_indices[index]] = grad_out(j, k, i);
+                index++;
+            }
+        }
+    }
+
+    return grad;
 }
