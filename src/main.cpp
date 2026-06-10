@@ -4,6 +4,7 @@
 #include "loss./softmax_cross_entropy_loss.h"
 #include "training/trainer.h"
 #include "training/cifar_10.h"
+#include "optimizer/sgd.h"
 
 int main() {
 
@@ -13,21 +14,48 @@ int main() {
 
 
     Network net;
+    SGD optimizer(0.01f);
     SoftmaxCrossEntropyLoss loss_fn;
 
-    Tensor logits = net.forward(dataset.train[0].image);
-
-    for (int i = 0; i < logits.rows; i++)
+    for(int iter = 0; iter < 1000; iter++)
     {
-        std::cout << logits(i,0,0) << '\n';
+        Tensor logits =
+            net.forward(dataset.train[0].image);
+
+        float loss =
+            loss_fn.forward(
+                logits,
+                dataset.train[0].label);
+
+        Tensor grad =
+            loss_fn.backward();
+
+        net.backward(grad);
+
+        optimizer.step(net);
+
+        if(iter % 50 == 0)
+        {
+            std::cout
+                << iter
+                << " "
+                << loss
+                << '\n';
+        }
+    }
+    Tensor logits =
+            net.forward(dataset.train[0].image);
+    int pred = 0;
+
+    for(int i = 1; i < logits.rows; i++)
+    {
+        if(logits(i,0,0) > logits(pred,0,0))
+            pred = i;
     }
 
-    float loss = loss_fn.forward(logits, dataset.train[0].label);
-
-    std::cout << "Loss :: " << loss << '\n';
-
-    Tensor grad = loss_fn.backward();
-    net.backward(grad);
-    
+    std::cout
+        << "Prediction: "
+        << pred
+        << '\n';
     return 0;
 }

@@ -23,9 +23,12 @@ add_executable(convolution_neural_network
     #Network
     src/network/network.cpp
 
-    #Trainin
+    #Training
     src/training/trainer.cpp
     src/training/cifar_10.cpp
+
+    #Optimizer
+    src/optimizer/sgd.cpp
 )
 
 target_include_directories(convolution_neural_network PRIVATE

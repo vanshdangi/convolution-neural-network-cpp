@@ -30,58 +30,15 @@ void Network::backward(const Tensor& grad_logits){
     Tensor grad = grad_logits;
 
     grad = d2.backward(grad);
-    std::cout
-    << grad.rows << " "
-    << grad.cols << " "
-    << grad.depth << '\n';
     grad = r3.backward(grad);
-    std::cout
-    << grad.rows << " "
-    << grad.cols << " "
-    << grad.depth << '\n';
     grad = d1.backward(grad);
-    std::cout
-    << grad.rows << " "
-    << grad.cols << " "
-    << grad.depth << '\n';
     grad = flatten.backward(grad);
-    std::cout
-    << grad.rows << " "
-    << grad.cols << " "
-    << grad.depth << '\n';
     grad = maxPool2.backward(grad);
-    std::cout
-    << grad.rows << " "
-    << grad.cols << " "
-    << grad.depth << '\n';
     grad = r2.backward(grad);
-    std::cout
-    << grad.rows << " "
-    << grad.cols << " "
-    << grad.depth << '\n';
     grad = conv2.backward(grad);
-    std::cout
-    << grad.rows << " "
-    << grad.cols << " "
-    << grad.depth << '\n';
     grad = maxPool1.backward(grad);
-    std::cout
-    << grad.rows << " "
-    << grad.cols << " "
-    << grad.depth << '\n';
     grad = r1.backward(grad);
-    std::cout
-    << grad.rows << " "
-    << grad.cols << " "
-    << grad.depth << '\n';
     grad = conv1.backward(grad);
-    std::cout
-    << grad.rows << " "
-    << grad.cols << " "
-    << grad.depth << '\n';
-
-    std::cout << "Conv1 dw Size :: " << conv1.dW.size() << '\n';
-    std::cout << "Conv2 dw Size :: " << conv2.dW.size() << '\n';
 }
 
 /*
