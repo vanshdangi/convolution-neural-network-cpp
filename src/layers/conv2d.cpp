@@ -6,9 +6,14 @@ Conv2d::Conv2d(int in_channels, int out_channels, int kernel_size)
 
     filters.reserve(out_channels);
 
-    std::random_device rd;
-    std::mt19937 gen(rd());
-    std::normal_distribution<float> dist(0.0f, 0.01f);
+    std::mt19937 gen(std::random_device{}());
+    float stddev =
+    std::sqrt(
+            2.0f /
+            (kernel_size *
+            kernel_size *
+            in_channels));
+            std::normal_distribution<float> dist(0.0f, stddev);
 
     for (int i = 0; i < out_channels; i++){
         Tensor filter(kernel_size, kernel_size, in_channels);
