@@ -3,7 +3,7 @@
 
 class MaxPool2D {
 public:
-    Tensor input;
+    const Tensor* input = nullptr;
 
     std::vector<int> max_indices;
 

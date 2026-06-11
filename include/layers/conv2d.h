@@ -4,7 +4,7 @@
 
 class Conv2d {
 public:
-    Tensor input;
+    const Tensor* input = nullptr;
     int kernel_size;
     std::vector<Tensor> filters;
     Tensor bias;

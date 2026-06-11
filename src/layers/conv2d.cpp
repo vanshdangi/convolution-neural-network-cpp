@@ -34,7 +34,7 @@ Conv2d::Conv2d(int in_channels, int out_channels, int kernel_size)
 }
 
 Tensor Conv2d::forward(const Tensor& x){
-    input = x;
+    input = &x;
 
     int H_out = x.rows - kernel_size + 1;
     int W_out = x.cols - kernel_size + 1;
@@ -74,7 +74,7 @@ Tensor Conv2d::backward(const Tensor& grad_out){
 
     // Compute dW = grad_out * input^T
     for(int f = 0; f < filters.size(); f++){
-        Tensor grad_filter(kernel_size, kernel_size, input.depth);
+        Tensor grad_filter(kernel_size, kernel_size, input->depth);
 
         for (int i = 0; i < grad_out.rows; ++i) {
             for (int j = 0; j < grad_out.cols; ++j) {
@@ -82,8 +82,8 @@ Tensor Conv2d::backward(const Tensor& grad_out){
 
                 for(int ki = 0; ki < kernel_size; ki++){
                     for(int kj = 0; kj < kernel_size; kj++){
-                        for(int d = 0; d < input.depth; d++){
-                            grad_filter(ki, kj, d) += input(i+ki, j+kj, d)*grad;
+                        for(int d = 0; d < input->depth; d++){
+                            grad_filter(ki, kj, d) += (*input)(i+ki, j+kj, d)*grad;
                         }
                     }
                 }
@@ -93,7 +93,7 @@ Tensor Conv2d::backward(const Tensor& grad_out){
     }
 
     // Compute grad_input = W^T * grad_out
-    Tensor grad_input(input.rows, input.cols, input.depth);
+    Tensor grad_input(input->rows, input->cols, input->depth);
 
     for(int f = 0; f < filters.size(); f++){
 
@@ -103,7 +103,7 @@ Tensor Conv2d::backward(const Tensor& grad_out){
 
                 for(int ki = 0; ki < kernel_size; ki++){
                     for(int kj = 0; kj < kernel_size; kj++){
-                        for(int d = 0; d < input.depth; d++){
+                        for(int d = 0; d < input->depth; d++){
                             grad_input(i+ki, j+kj, d) += filters[f](ki, kj, d) * grad;
                         }
                     }

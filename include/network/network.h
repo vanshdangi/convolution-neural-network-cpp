@@ -1,5 +1,6 @@
 #pragma once
 #include "math/tensor.h"
+#include <vector>
 //Layers
 #include "layers/conv2d.h"
 #include "layers/relu.h"
@@ -20,6 +21,8 @@ public:
     Dense d1;
     ReLU r3;
     Dense d2;
+
+    std::vector<Tensor> activations;
 
     Network();
     Tensor forward(const Tensor& x);

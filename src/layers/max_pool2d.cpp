@@ -2,7 +2,7 @@
 
 // 2d max pool of size 2x2 with stride 2
 Tensor MaxPool2D::forward(const Tensor& x){
-    input = x;
+    input = &x;
     max_indices.clear();
 
     int out_rows = x.rows/2;
@@ -41,7 +41,7 @@ Tensor MaxPool2D::forward(const Tensor& x){
 
 Tensor MaxPool2D::backward(const Tensor& grad_out){
 
-    Tensor grad(input.rows, input.cols, input.depth);
+    Tensor grad(input->rows, input->cols, input->depth);
     int index = 0;
 
     for(int i = 0; i < grad_out.depth; i++){

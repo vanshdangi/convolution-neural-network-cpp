@@ -22,7 +22,7 @@ Dense::Dense(int in, int out)
 
 Tensor Dense::forward(const Tensor& x) {
     // Cache input for backprop later
-    input = x;
+    input = &x;
 
     // Output: (out, 1)
     Tensor out(W.rows, 1, 1);
@@ -56,7 +56,7 @@ Tensor Dense::backward(const Tensor& grad_out) {
     // Compute dW = grad_out * input^T
     for (int i = 0; i < out; ++i) {
         for (int j = 0; j < in; ++j) {
-            dW(i, j, 0) = grad_out(i, 0, 0) * input(j, 0, 0);
+            dW(i, j, 0) = grad_out(i, 0, 0) * (*input)(j, 0, 0);
         }
     }
 

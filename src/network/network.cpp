@@ -6,20 +6,40 @@ Network::Network()
     d1(1152, 128),
     d2(128, 10)
 {
+    activations.reserve(10);
 }
 
 Tensor Network::forward(const Tensor& x) {
-    Tensor out = conv1.forward(x);
-    out = r1.forward(out);
-    out = maxPool1.forward(out);
-    out = conv2.forward(out);
-    out = r2.forward(out);
-    out = maxPool2.forward(out);
-    out = flatten.forward(out);
-    out = d1.forward(out);
-    out = r3.forward(out);
-    out = d2.forward(out);
+    activations.clear();
 
+    Tensor out = conv1.forward(x);
+    activations.push_back(out);
+
+    out = r1.forward(activations.back());
+    activations.push_back(out);
+
+    out = maxPool1.forward(activations.back());
+    activations.push_back(out);
+
+    out = conv2.forward(activations.back());
+    activations.push_back(out);
+
+    out = r2.forward(activations.back());
+    activations.push_back(out);
+
+    out = maxPool2.forward(activations.back());
+    activations.push_back(out);
+
+    out = flatten.forward(activations.back());
+    activations.push_back(out);
+
+    out = d1.forward(activations.back());
+    activations.push_back(out);
+
+    out = r3.forward(activations.back());
+    activations.push_back(out);
+
+    out = d2.forward(activations.back());
 
     return out; // logits (10 × 1)
 }

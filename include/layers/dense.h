@@ -6,7 +6,7 @@ class Dense {
 public:
     Tensor W, b;
     Tensor dW, db;
-    Tensor input;
+    const Tensor* input = nullptr;
 
     Dense(int in, int out);
     Tensor forward(const Tensor& x);
