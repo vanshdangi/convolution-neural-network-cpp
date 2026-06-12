@@ -27,4 +27,7 @@ public:
     Network();
     Tensor forward(const Tensor& x);
     void backward(const Tensor& grad_logits);
+
+    void save(const std::string& filename) const;
+    void load(const std::string& filename);
 };

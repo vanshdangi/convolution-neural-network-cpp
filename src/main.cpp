@@ -18,11 +18,11 @@ int main() {
         CIFAR10 dataset("data/");
 
         Network net;
-        SGD optimizer(0.01f);
+        SGD optimizer(0.01f, 0.0005f);
         SoftmaxCrossEntropyLoss loss_fn;
 
         Trainer trainer(net, loss_fn, optimizer);
-        trainer.train(dataset.train,dataset.test, 25);
+        trainer.train(dataset.train,dataset.test, 20);
         trainer.evaluate(dataset.test);
     }
     catch(const std::exception& e)

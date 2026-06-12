@@ -24,13 +24,21 @@ void Trainer::train(const std::vector<Sample>& train_data, const std::vector<Sam
         float total_loss = 0.0f;
         int correct = 0;
 
-        if(epoch == 5) {
+        if(epoch == 5 || epoch == 12) {
             optimizer.lr *= 0.1f;
         }
 
         for (size_t i = 0; i < shuffled_training_data.size(); ++i) {
-            const Tensor& image = shuffled_training_data[i].image;
+            Tensor image = shuffled_training_data[i].image;
             int label = shuffled_training_data[i].label;
+
+            std::uniform_int_distribution<int> flip_dist(0,1);
+            if(flip_dist(rng)){
+                image = horizontal_flip(image);
+            }
+            image = pad_image(image, 4);
+            image = random_crop(image, 32);
+
 
             // Forward
             Tensor logits = net.forward(image);
@@ -64,8 +72,9 @@ void Trainer::train(const std::vector<Sample>& train_data, const std::vector<Sam
                 << " | LR: " << optimizer.lr
                 << " | Loss: " << avg_loss
                 << " | Accuracy: " << accuracy * 100.0f << "%\n";
-        
+                
         evaluate(test_data);
+        std::cout << "||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||" << "\n";
     }
 }
 
@@ -95,4 +104,57 @@ void Trainer::evaluate(const std::vector<Sample>& test_data) {
     std::cout << "Test Loss: " << avg_loss << "\n";
     std::cout << "Test Accuracy: "
               << accuracy * 100.0f << "%\n";
+}
+
+// Augmentation
+Tensor Trainer::horizontal_flip(const Tensor& img){
+    Tensor out(img.rows, img.cols, img.depth);
+
+    for(int r = 0; r < img.rows; r++){
+        for(int c = 0; c < img.cols; c++){
+            for(int d = 0; d < img.depth; d++){
+                out(r,c,d) = img(r, img.cols - 1 - c, d);
+            }
+        }
+    }
+    return out;
+}
+
+Tensor Trainer::pad_image(const Tensor& img, int pad) {
+    Tensor padded(
+        img.rows + 2 * pad,
+        img.cols + 2 * pad,
+        img.depth
+    );
+
+    for(int r = 0; r < img.rows; r++) {
+        for(int c = 0; c < img.cols; c++) {
+            for(int d = 0; d < img.depth; d++) {
+                padded(r + pad, c + pad, d) = img(r, c, d);
+            }
+        }
+    }
+
+    return padded;
+}
+
+Tensor Trainer::random_crop(const Tensor& img, int crop_size) {
+    int max_r = img.rows - crop_size;
+    int max_c = img.cols - crop_size;
+
+    int start_r = rand() % (max_r + 1);
+    int start_c = rand() % (max_c + 1);
+
+    Tensor cropped(crop_size, crop_size, img.depth);
+
+    for(int r = 0; r < crop_size; r++) {
+        for(int c = 0; c < crop_size; c++) {
+            for(int d = 0; d < img.depth; d++) {
+                cropped(r, c, d) =
+                    img(start_r + r, start_c + c, d);
+            }
+        }
+    }
+
+    return cropped;
 }

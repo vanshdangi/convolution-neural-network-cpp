@@ -3,6 +3,7 @@
 #include "loss/softmax_cross_entropy_loss.h"
 #include "optimizer/SGD.h"
 #include "training/cifar_10.h"
+#include "math/tensor.h"
 
 class Trainer {
 public:
@@ -12,6 +13,11 @@ public:
 
     void train(const std::vector<Sample>& train_data,const std::vector<Sample>& test_data, int epochs);
     void evaluate(const std::vector<Sample>& test_data);
+    
+    // Augmentation
+    Tensor horizontal_flip(const Tensor& img);
+    Tensor pad_image(const Tensor& img, int pad);
+    Tensor random_crop(const Tensor& img, int crop_size);
 
 private:
     Network& net;

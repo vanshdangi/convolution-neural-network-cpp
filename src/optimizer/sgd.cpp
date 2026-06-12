@@ -1,16 +1,17 @@
 #include "optimizer/sgd.h"
 
-SGD::SGD(float learning_rate)
-    :lr(learning_rate){}
+SGD::SGD(float learning_rate, float wd)
+    :lr(learning_rate), weight_decay(wd){}
 
 void SGD::step(Network& net){
+
     
     // Conv1
     for (int f = 0; f < net.conv1.filters.size(); f++){
         for (int i = 0; i < net.conv1.filters[f].rows; i++){
             for (int j = 0; j < net.conv1.filters[f].cols; j++){
                 for (int k = 0; k < net.conv1.filters[f].depth; k++){
-                    net.conv1.filters[f](i, j, k) -= lr * net.conv1.dW[f](i, j, k);
+                    net.conv1.filters[f](i, j, k) -= lr * (net.conv1.dW[f](i, j, k) + (weight_decay*net.conv1.filters[f](i, j, k)));
                 }
             }
         }
@@ -24,7 +25,7 @@ void SGD::step(Network& net){
         for (int i = 0; i < net.conv2.filters[f].rows; i++){
             for (int j = 0; j < net.conv2.filters[f].cols; j++){
                 for (int k = 0; k < net.conv2.filters[f].depth; k++){
-                    net.conv2.filters[f](i, j, k) -= lr * net.conv2.dW[f](i, j, k);
+                    net.conv2.filters[f](i, j, k) -= lr * (net.conv2.dW[f](i, j, k) + (weight_decay*net.conv2.filters[f](i, j, k)));
                 }
             }
         }
@@ -36,7 +37,7 @@ void SGD::step(Network& net){
     // d1
     for (int i = 0; i < net.d1.W.rows; i++) {
         for (int j = 0; j < net.d1.W.cols; j++) {
-            net.d1.W(i, j, 0) -= lr * net.d1.dW(i, j, 0);
+            net.d1.W(i, j, 0) -= lr * (net.d1.dW(i, j, 0) + (weight_decay*net.d1.W(i, j, 0)));
         }
     }
     for (int i = 0; i < net.d1.b.rows; i++){
@@ -47,7 +48,7 @@ void SGD::step(Network& net){
     // d2
     for (int i = 0; i < net.d2.W.rows; i++) {
         for (int j = 0; j < net.d2.W.cols; j++) {
-            net.d2.W(i, j, 0) -= lr * net.d2.dW(i, j, 0);
+            net.d2.W(i, j, 0) -= lr * (net.d2.dW(i, j, 0) + (weight_decay*net.d2.W(i, j, 0)));
         }
     }
     for (int i = 0; i < net.d2.b.rows; i++){
