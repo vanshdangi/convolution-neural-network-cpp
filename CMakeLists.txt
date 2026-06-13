@@ -34,3 +34,7 @@ add_executable(convolution_neural_network
 target_include_directories(convolution_neural_network PRIVATE
     include
 )
+
+if(MSVC)
+    target_compile_options(convolution_neural_network PRIVATE /O2 /arch:AVX2)
+endif()

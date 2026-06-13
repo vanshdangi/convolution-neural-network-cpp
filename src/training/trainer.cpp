@@ -24,7 +24,7 @@ void Trainer::train(const std::vector<Sample>& train_data, const std::vector<Sam
         float total_loss = 0.0f;
         int correct = 0;
 
-        if(epoch == 5 || epoch == 12) {
+        if(epoch == 5 || epoch == 15) {
             optimizer.lr *= 0.1f;
         }
 
@@ -60,13 +60,15 @@ void Trainer::train(const std::vector<Sample>& train_data, const std::vector<Sam
 
         float avg_loss = total_loss / shuffled_training_data.size();
         float accuracy = (float)correct / shuffled_training_data.size();
+        float best_accuracy = 0.0f;
+
+        // Save best model
+        if (accuracy > best_accuracy) {
+            best_accuracy = accuracy;
+            net.save("best_model.bin");
+        }
 
         auto end = std::chrono::high_resolution_clock::now();
-
-        std::cout
-            << "Epoch Time: "
-            << std::chrono::duration<double>(end - start).count()
-            << " sec\n";
 
         std::cout << "Epoch " << epoch + 1
                 << " | LR: " << optimizer.lr
@@ -74,6 +76,11 @@ void Trainer::train(const std::vector<Sample>& train_data, const std::vector<Sam
                 << " | Accuracy: " << accuracy * 100.0f << "%\n";
                 
         evaluate(test_data);
+
+        std::cout
+            << "Epoch Time: "
+            << std::chrono::duration<double>(end - start).count()
+            << " sec\n";
         std::cout << "||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||" << "\n";
     }
 }
