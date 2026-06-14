@@ -10,35 +10,27 @@ Trainer::Trainer(Network& n,
                 SGD& opt)
     : net(n), loss_fn(lf), optimizer(opt) {}
 
-void Trainer::train(const std::vector<Sample>& train_data, const std::vector<Sample>& test_data, int epochs) {
-
+void Trainer::train(const std::vector<Sample>& train_data, const std::vector<Sample>& test_data, int epochs){
     std::cout << "Training Begins...\n";
 
     std::mt19937 rng(std::random_device{}());
-    std::vector<Sample> shuffled_training_data = train_data;
-    
+    std::vector<Sample> shuffled_data = train_data;
+
+    float best_test_accuracy = 0.0f;
+    int patience_counter = 0;
+
     for (int epoch = 0; epoch < epochs; ++epoch) {
         auto start = std::chrono::high_resolution_clock::now();
-        std::shuffle(shuffled_training_data.begin(), shuffled_training_data.end(), rng);
+
+        // Shuffle dataset every epoch
+        std::shuffle(shuffled_data.begin(), shuffled_data.end(), rng);
 
         float total_loss = 0.0f;
         int correct = 0;
 
-        if(epoch == 5 || epoch == 15) {
-            optimizer.lr *= 0.1f;
-        }
-
-        for (size_t i = 0; i < shuffled_training_data.size(); ++i) {
-            Tensor image = shuffled_training_data[i].image;
-            int label = shuffled_training_data[i].label;
-
-            std::uniform_int_distribution<int> flip_dist(0,1);
-            if(flip_dist(rng)){
-                image = horizontal_flip(image);
-            }
-            image = pad_image(image, 4);
-            image = random_crop(image, 32);
-
+        for (const auto& sample : shuffled_data) {
+            Tensor image = augment(sample.image, rng);
+            int label = sample.label;
 
             // Forward
             Tensor logits = net.forward(image);
@@ -46,8 +38,7 @@ void Trainer::train(const std::vector<Sample>& train_data, const std::vector<Sam
             total_loss += loss;
 
             // Accuracy
-            int pred = argmax(logits);
-            if (pred == label)
+            if (argmax(logits) == label)
                 correct++;
 
             // Backward
@@ -58,34 +49,47 @@ void Trainer::train(const std::vector<Sample>& train_data, const std::vector<Sam
             optimizer.step(net);
         }
 
-        float avg_loss = total_loss / shuffled_training_data.size();
-        float accuracy = (float)correct / shuffled_training_data.size();
-        float best_accuracy = 0.0f;
+        float train_loss = total_loss / shuffled_data.size();
+        float train_accuracy =
+            static_cast<float>(correct) / shuffled_data.size();
+
+        // Evaluate on test set
+        float test_accuracy = evaluate(test_data);
 
         // Save best model
-        if (accuracy > best_accuracy) {
-            best_accuracy = accuracy;
+        if (test_accuracy > best_test_accuracy) {
+            best_test_accuracy = test_accuracy;
+            patience_counter = 0;
             net.save("best_model.bin");
+        } else {
+            patience_counter++;
+        }
+
+        // Auto LR scheduler
+        if (patience_counter >= 3 && optimizer.lr > 1e-5f) {
+            optimizer.lr *= 0.1f;
+            patience_counter = 0;
+            std::cout << "Learning rate reduced to "
+                    << optimizer.lr << "\n";
         }
 
         auto end = std::chrono::high_resolution_clock::now();
 
         std::cout << "Epoch " << epoch + 1
                 << " | LR: " << optimizer.lr
-                << " | Loss: " << avg_loss
-                << " | Accuracy: " << accuracy * 100.0f << "%\n";
-                
-        evaluate(test_data);
+                << " | Train Loss: " << train_loss
+                << " | Train Accuracy: "
+                << train_accuracy * 100.0f << "%\n";
 
-        std::cout
-            << "Epoch Time: "
-            << std::chrono::duration<double>(end - start).count()
-            << " sec\n";
-        std::cout << "||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||" << "\n";
+        std::cout << "Epoch Time: "
+                << std::chrono::duration<double>(end - start).count()
+                << " sec\n";
+
+        std::cout << "--------------------------------------------------\n";
     }
 }
 
-void Trainer::evaluate(const std::vector<Sample>& test_data) {
+float Trainer::evaluate(const std::vector<Sample>& test_data) {
 
     int correct = 0;
     float total_loss = 0.0f;
@@ -111,6 +115,22 @@ void Trainer::evaluate(const std::vector<Sample>& test_data) {
     std::cout << "Test Loss: " << avg_loss << "\n";
     std::cout << "Test Accuracy: "
               << accuracy * 100.0f << "%\n";
+
+    return accuracy;
+}
+
+Tensor Trainer::augment(const Tensor& image, std::mt19937& rng){
+    Tensor out = image;
+
+    std::uniform_int_distribution<int> flip_dist(0, 1);
+
+    if (flip_dist(rng))
+        out = horizontal_flip(out);
+
+    out = pad_image(out, 4);
+    out = random_crop(out, 32);
+
+    return out;
 }
 
 // Augmentation

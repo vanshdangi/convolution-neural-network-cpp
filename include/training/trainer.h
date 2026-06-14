@@ -12,9 +12,10 @@ public:
             SGD& optimizer);
 
     void train(const std::vector<Sample>& train_data,const std::vector<Sample>& test_data, int epochs);
-    void evaluate(const std::vector<Sample>& test_data);
+    float evaluate(const std::vector<Sample>& test_data);
     
     // Augmentation
+    Tensor augment(const Tensor& image, std::mt19937& rng);
     Tensor horizontal_flip(const Tensor& img);
     Tensor pad_image(const Tensor& img, int pad);
     Tensor random_crop(const Tensor& img, int crop_size);

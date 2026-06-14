@@ -22,7 +22,7 @@ int main() {
         SoftmaxCrossEntropyLoss loss_fn;
 
         Trainer trainer(net, loss_fn, optimizer);
-        trainer.train(dataset.train,dataset.test, 20);
+        trainer.train(dataset.train,dataset.test, 40);
         trainer.evaluate(dataset.test);
     }
     catch(const std::exception& e)
