@@ -5,6 +5,7 @@
 class Tensor
 {
 public:
+    int batch;
     int rows;
     int cols;
     int depth;
@@ -14,22 +15,28 @@ public:
     Tensor();
     Tensor(int r, int c, int d);
     Tensor(int r, int c, int d, float initValue);
+    Tensor(int b, int r, int c, int d);
+    Tensor(int b, int r, int c, int d, float initValue);
 
     // Element access
     float& operator()(int r, int c, int d);
     const float& operator()(int r, int c, int d) const;
+    float& operator()(int b, int r, int c, int d);
+    const float& operator()(int b, int r, int c, int d) const;
 
     // Utilities
     void fill(float value);
     void randomize(float min = -0.1f, float max = 0.1f);
     void resize(int r, int c, int d);
-    Tensor Tensor::pad(int pad);
+    void resize(int b, int r, int c, int d);
+    Tensor pad(int pad) const;
 
     // Helpers
     int size() const;
     float max_value() const;
     float min_value() const;
 
+    int getBatch() const;
     int getRows() const;
     int getCols() const;
     int getDepth() const;
@@ -58,5 +65,5 @@ public:
     Tensor& operator/=(float scalar);
 
     // Visualize tensor
-    void Tensor::print() const;
+    void print() const;
 };

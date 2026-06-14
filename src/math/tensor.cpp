@@ -1,31 +1,50 @@
 #include "math/tensor.h"
+#include <algorithm>
 #include <random>
 #include <iostream>
 #include <iomanip>
 
 // Constructors
 Tensor::Tensor()
-    : rows(0), cols(0), depth(0){};
+    : batch(0), rows(0), cols(0), depth(0) {}
 
 Tensor::Tensor(int r, int c, int d)
-    : rows(r), cols(c), depth(d), data(r*c*d, 0.0f){};
+    : batch(1), rows(r), cols(c), depth(d), data(r * c * d, 0.0f) {}
 
 Tensor::Tensor(int r, int c, int d, float initValue)
-    : rows(r), cols(c), depth(d), data(r*c*d, initValue){};
+    : batch(1), rows(r), cols(c), depth(d), data(r * c * d, initValue) {}
+
+Tensor::Tensor(int b, int r, int c, int d)
+    : batch(b), rows(r), cols(c), depth(d), data(b * r * c * d, 0.0f) {}
+
+Tensor::Tensor(int b, int r, int c, int d, float initValue)
+    : batch(b), rows(r), cols(c), depth(d), data(b * r * c * d, initValue) {}
 
 // Element access
 float& Tensor::operator()(int r, int c, int d){
-    assert(r >= 0 && r < rows);
-    assert(c >= 0 && c < cols);
-    assert(d >= 0 && d < depth);
-    return data[r*cols*depth + c*depth + d];
+    assert(batch == 1);
+    return operator()(0, r, c, d);
 }
 
 const float& Tensor::operator()(int r, int c, int d) const{
+    assert(batch == 1);
+    return operator()(0, r, c, d);
+}
+
+float& Tensor::operator()(int b, int r, int c, int d){
+    assert(b >= 0 && b < batch);
     assert(r >= 0 && r < rows);
     assert(c >= 0 && c < cols);
     assert(d >= 0 && d < depth);
-    return data[r*cols*depth + c*depth + d];
+    return data[((b * rows + r) * cols + c) * depth + d];
+}
+
+const float& Tensor::operator()(int b, int r, int c, int d) const{
+    assert(b >= 0 && b < batch);
+    assert(r >= 0 && r < rows);
+    assert(c >= 0 && c < cols);
+    assert(d >= 0 && d < depth);
+    return data[((b * rows + r) * cols + c) * depth + d];
 }
 
 // Utilities
@@ -44,28 +63,35 @@ void Tensor::randomize(float min, float max)
 }
 
 void Tensor::resize(int r, int c, int d){
+    batch = 1;
     rows = r;
-    cols = c; 
+    cols = c;
     depth = d;
-    data.resize(r*c*d);
+    data.resize(r * c * d);
 }
 
-Tensor Tensor::pad(int pad)
-{
-    Tensor result(
-        rows + 2 * pad,
-        cols + 2 * pad,
-        depth
-    );
+void Tensor::resize(int b, int r, int c, int d){
+    batch = b;
+    rows = r;
+    cols = c;
+    depth = d;
+    data.resize(b * r * c * d);
+}
 
-    for (int r = 0; r < rows; r++)
+Tensor Tensor::pad(int pad) const
+{
+    Tensor result(batch, rows + 2 * pad, cols + 2 * pad, depth);
+
+    for (int b = 0; b < batch; b++)
     {
-        for (int c = 0; c < cols; c++)
+        for (int r = 0; r < rows; r++)
         {
-            for (int d = 0; d < depth; d++)
+            for (int c = 0; c < cols; c++)
             {
-                result(r + pad, c + pad, d) =
-                    (*this)(r, c, d);
+                for (int d = 0; d < depth; d++)
+                {
+                    result(b, r + pad, c + pad, d) = (*this)(b, r, c, d);
+                }
             }
         }
     }
@@ -75,7 +101,7 @@ Tensor Tensor::pad(int pad)
 
 // Helpers
 int Tensor::size() const{
-    return rows*cols*depth;
+    return batch * rows * cols * depth;
 }
 
 float Tensor::max_value() const{
@@ -99,6 +125,11 @@ float Tensor::min_value() const{
     }
     return min_v;
 }
+
+int Tensor::getBatch() const{
+    return batch;
+}
+
 int Tensor::getRows() const{
     return rows;
 }
@@ -127,7 +158,8 @@ float Tensor::mean() const{
 // Comparison
 bool Tensor::operator==(const Tensor& other) const
 {
-    return rows == other.rows &&
+    return batch == other.batch &&
+            rows == other.rows &&
             cols == other.cols &&
             depth == other.depth &&
             data == other.data;
@@ -140,49 +172,50 @@ bool Tensor::operator!=(const Tensor& other) const
 
 // Scalar Operations
 Tensor Tensor::operator+(float scalar) const{
-    Tensor result(rows, cols, depth);
+    Tensor result(batch, rows, cols, depth);
 
     for(int i = 0; i < size(); i++){
-        result.data[i] = data[i]+scalar;
+        result.data[i] = data[i] + scalar;
     }
     return result;
 }
 
 Tensor Tensor::operator-(float scalar) const{
-    Tensor result(rows, cols, depth);
+    Tensor result(batch, rows, cols, depth);
     
     for(int i = 0; i < size(); i++){
-        result.data[i] = data[i]-scalar;
+        result.data[i] = data[i] - scalar;
     }
     return result;
 }
 
 Tensor Tensor::operator*(float scalar) const{
-    Tensor result(rows, cols, depth);
+    Tensor result(batch, rows, cols, depth);
     
     for(int i = 0; i < size(); i++){
-        result.data[i] = data[i]*scalar;
+        result.data[i] = data[i] * scalar;
     }
     return result;
 }
 
 Tensor Tensor::operator/(float scalar) const{
     assert(scalar != 0);
-    Tensor result(rows, cols, depth);
+    Tensor result(batch, rows, cols, depth);
     
     for(int i = 0; i < size(); i++){
-        result.data[i] = data[i]/scalar;
+        result.data[i] = data[i] / scalar;
     }
     return result;
 }
 
 // Tensor-Tensor Operations
 Tensor Tensor::operator+(const Tensor& other) const{
+    assert(batch == other.batch);
     assert(rows == other.rows);
     assert(cols == other.cols);
     assert(depth == other.depth);
 
-    Tensor result(rows, cols, depth);
+    Tensor result(batch, rows, cols, depth);
     for(int i = 0; i < size(); i++){
         result.data[i] = data[i] + other.data[i];
     }
@@ -190,11 +223,12 @@ Tensor Tensor::operator+(const Tensor& other) const{
 }
 
 Tensor Tensor::operator-(const Tensor& other) const{
+    assert(batch == other.batch);
     assert(rows == other.rows);
     assert(cols == other.cols);
     assert(depth == other.depth);
 
-    Tensor result(rows, cols, depth);
+    Tensor result(batch, rows, cols, depth);
     for(int i = 0; i < size(); i++){
         result.data[i] = data[i] - other.data[i];
     }
@@ -203,6 +237,7 @@ Tensor Tensor::operator-(const Tensor& other) const{
 
 // In-Place Operations
 Tensor& Tensor::operator+=(const Tensor& other){
+    assert(batch == other.batch);
     assert(rows == other.rows);
     assert(cols == other.cols);
     assert(depth == other.depth);
@@ -214,6 +249,7 @@ Tensor& Tensor::operator+=(const Tensor& other){
 }
 
 Tensor& Tensor::operator-=(const Tensor& other){
+    assert(batch == other.batch);
     assert(rows == other.rows);
     assert(cols == other.cols);
     assert(depth == other.depth);
@@ -225,7 +261,6 @@ Tensor& Tensor::operator-=(const Tensor& other){
 }
 
 Tensor& Tensor::operator*=(float scalar){
-    Tensor result(rows, cols, depth);
     for(int i = 0; i < size(); i++){
         data[i] *= scalar;
     }
@@ -233,7 +268,6 @@ Tensor& Tensor::operator*=(float scalar){
 }
 
 Tensor& Tensor::operator/=(float scalar){
-    Tensor result(rows, cols, depth);
     for(int i = 0; i < size(); i++){
         data[i] /= scalar;
     }
@@ -243,20 +277,21 @@ Tensor& Tensor::operator/=(float scalar){
 
 void Tensor::print() const
 {
-    for(int d = 0; d < depth; d++)
+    for(int b = 0; b < batch; b++)
     {
-        std::cout << "Depth " << d << ":\n";
-
-        for(int r = 0; r < rows; r++)
+        std::cout << "Batch " << b << ":\n";
+        for(int d = 0; d < depth; d++)
         {
-            for(int c = 0; c < cols; c++)
+            std::cout << "Depth " << d << ":\n";
+            for(int r = 0; r < rows; r++)
             {
-                std::cout << std::setw(8) << (*this)(r, c, d) << " ";
+                for(int c = 0; c < cols; c++)
+                {
+                    std::cout << std::setw(8) << (*this)(b, r, c, d) << " ";
+                }
+                std::cout << '\n';
             }
-
             std::cout << '\n';
         }
-
-        std::cout << '\n';
     }
 }
