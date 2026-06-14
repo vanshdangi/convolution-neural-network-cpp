@@ -16,6 +16,7 @@ void Trainer::train(const std::vector<Sample>& train_data, const std::vector<Sam
     std::mt19937 rng(std::random_device{}());
     std::vector<Sample> shuffled_data = train_data;
 
+    float best_test_loss = std::numeric_limits<float>::max();
     float best_test_accuracy = 0.0f;
     int patience_counter = 0;
 
@@ -54,49 +55,54 @@ void Trainer::train(const std::vector<Sample>& train_data, const std::vector<Sam
             static_cast<float>(correct) / shuffled_data.size();
 
         // Evaluate on test set
-        float test_accuracy = evaluate(test_data);
+        auto [test_loss, test_accuracy] = evaluate(test_data);
 
         // Save best model
-        if (test_accuracy > best_test_accuracy) {
+        if (test_accuracy > best_test_accuracy){
             best_test_accuracy = test_accuracy;
-            patience_counter = 0;
             net.save("best_model.bin");
-        } else {
+        }
+
+        if (test_loss < best_test_loss){
+            best_test_loss = test_loss;
+            patience_counter = 0;
+        } else{
             patience_counter++;
         }
 
+        
+        auto end = std::chrono::high_resolution_clock::now();
+        
+        std::cout << "Epoch " << epoch + 1
+        << " | LR: " << optimizer.lr
+        << " | Train Loss: " << train_loss
+        << " | Train Accuracy: "
+        << train_accuracy * 100.0f << "%\n";
+        
+        std::cout << "Epoch Time: "
+        << std::chrono::duration<double>(end - start).count()
+        << " sec\n";
+        
         // Auto LR scheduler
         if (patience_counter >= 3 && optimizer.lr > 1e-5f) {
             optimizer.lr *= 0.1f;
             patience_counter = 0;
-            std::cout << "Learning rate reduced to "
-                    << optimizer.lr << "\n";
+            std::cout << "LR scheduled for next epoch: " << optimizer.lr << "\n";
         }
-
-        auto end = std::chrono::high_resolution_clock::now();
-
-        std::cout << "Epoch " << epoch + 1
-                << " | LR: " << optimizer.lr
-                << " | Train Loss: " << train_loss
-                << " | Train Accuracy: "
-                << train_accuracy * 100.0f << "%\n";
-
-        std::cout << "Epoch Time: "
-                << std::chrono::duration<double>(end - start).count()
-                << " sec\n";
-
+        if (patience_counter >= 8 && optimizer.lr <= 1e-5f)
+            break;
         std::cout << "--------------------------------------------------\n";
     }
 }
 
-float Trainer::evaluate(const std::vector<Sample>& test_data) {
+std::pair<float, float> Trainer::evaluate(const std::vector<Sample>& test_data) {
 
     int correct = 0;
     float total_loss = 0.0f;
 
-    for (size_t i = 0; i < test_data.size(); ++i) {
-        const Tensor& image = test_data[i].image;
-        int label = test_data[i].label;
+    for (const auto& sample : test_data) {
+        const Tensor& image = sample.image;
+        int label = sample.label;
 
         Tensor logits = net.forward(image);
         float loss = loss_fn.forward(logits, label);
@@ -116,7 +122,7 @@ float Trainer::evaluate(const std::vector<Sample>& test_data) {
     std::cout << "Test Accuracy: "
               << accuracy * 100.0f << "%\n";
 
-    return accuracy;
+    return {avg_loss, accuracy};
 }
 
 Tensor Trainer::augment(const Tensor& image, std::mt19937& rng){
@@ -128,7 +134,7 @@ Tensor Trainer::augment(const Tensor& image, std::mt19937& rng){
         out = horizontal_flip(out);
 
     out = pad_image(out, 4);
-    out = random_crop(out, 32);
+    out = random_crop(out, 32, rng);
 
     return out;
 }
@@ -165,12 +171,15 @@ Tensor Trainer::pad_image(const Tensor& img, int pad) {
     return padded;
 }
 
-Tensor Trainer::random_crop(const Tensor& img, int crop_size) {
+Tensor Trainer::random_crop(const Tensor& img, int crop_size, std::mt19937& rng) {
     int max_r = img.rows - crop_size;
     int max_c = img.cols - crop_size;
 
-    int start_r = rand() % (max_r + 1);
-    int start_c = rand() % (max_c + 1);
+    std::uniform_int_distribution<int> row_dist(0, max_r);
+    std::uniform_int_distribution<int> col_dist(0, max_c);
+
+    int start_r = row_dist(rng);
+    int start_c = col_dist(rng);
 
     Tensor cropped(crop_size, crop_size, img.depth);
 
