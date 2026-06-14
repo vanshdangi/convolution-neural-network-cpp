@@ -10,7 +10,7 @@ Trainer::Trainer(Network& n,
                 SGD& opt)
     : net(n), loss_fn(lf), optimizer(opt) {}
 
-void Trainer::train(const std::vector<Sample>& train_data, const std::vector<Sample>& test_data, int epochs){
+void Trainer::train(const std::vector<Sample>& train_data, const std::vector<Sample>& test_data, int epochs, int batch_size){
     std::cout << "Training Begins...\n";
 
     std::mt19937 rng(std::random_device{}());
@@ -29,24 +29,40 @@ void Trainer::train(const std::vector<Sample>& train_data, const std::vector<Sam
         float total_loss = 0.0f;
         int correct = 0;
 
-        for (const auto& sample : shuffled_data) {
-            Tensor image = augment(sample.image, rng);
-            int label = sample.label;
+        for (size_t i = 0; i < shuffled_data.size(); i += batch_size) {
+            int current_batch =
+                std::min(batch_size,
+                        (int)(shuffled_data.size() - i));
 
-            // Forward
-            Tensor logits = net.forward(image);
-            float loss = loss_fn.forward(logits, label);
-            total_loss += loss;
+            Tensor batch(current_batch, 32, 32, 3);
+            std::vector<int> labels(current_batch);
 
-            // Accuracy
-            if (argmax(logits) == label)
-                correct++;
+            for (int n = 0; n < current_batch; n++) {
+                Tensor image = augment(shuffled_data[i + n].image, rng);
+                labels[n] = shuffled_data[i + n].label;
 
-            // Backward
+                for (int r = 0; r < image.rows; r++) {
+                    for (int c = 0; c < image.cols; c++) {
+                        for (int d = 0; d < image.depth; d++) {
+                            batch(n, r, c, d) = image(r, c, d);
+                        }
+                    }
+                }
+            }
+
+            Tensor logits = net.forward(batch);
+
+            float loss = loss_fn.forward(logits, labels);
+            total_loss += loss * current_batch;
+
+            for (int n = 0; n < current_batch; n++) {
+                if (argmax(logits, n) == labels[n])
+                    correct++;
+            }
+
             Tensor grad = loss_fn.backward();
             net.backward(grad);
 
-            // Update
             optimizer.step(net);
         }
 
@@ -55,7 +71,7 @@ void Trainer::train(const std::vector<Sample>& train_data, const std::vector<Sam
             static_cast<float>(correct) / shuffled_data.size();
 
         // Evaluate on test set
-        auto [test_loss, test_accuracy] = evaluate(test_data);
+        auto [test_loss, test_accuracy] = evaluate(test_data, batch_size);
 
         // Save best model
         if (test_accuracy > best_test_accuracy){
@@ -95,28 +111,52 @@ void Trainer::train(const std::vector<Sample>& train_data, const std::vector<Sam
     }
 }
 
-std::pair<float, float> Trainer::evaluate(const std::vector<Sample>& test_data) {
-
+std::pair<float, float> Trainer::evaluate(const std::vector<Sample>& test_data, int batch_size)
+{
     int correct = 0;
     float total_loss = 0.0f;
 
-    for (const auto& sample : test_data) {
-        const Tensor& image = sample.image;
-        int label = sample.label;
+    for (size_t i = 0; i < test_data.size(); i += batch_size) {
+        int current_batch =
+            std::min(batch_size, (int)(test_data.size() - i));
 
-        Tensor logits = net.forward(image);
-        float loss = loss_fn.forward(logits, label);
-        total_loss += loss;
+        Tensor batch(current_batch, 32, 32, 3);
+        std::vector<int> labels(current_batch);
 
-        int pred = argmax(logits);
-        if (pred == label)
-            correct++;
+        // Pack batch
+        for (int n = 0; n < current_batch; n++) {
+            const Tensor& image = test_data[i + n].image;
+            labels[n] = test_data[i + n].label;
+
+            for (int r = 0; r < image.rows; r++) {
+                for (int c = 0; c < image.cols; c++) {
+                    for (int d = 0; d < image.depth; d++) {
+                        batch(n, r, c, d) = image(r, c, d);
+                    }
+                }
+            }
+        }
+
+        // Forward
+        Tensor logits = net.forward(batch);
+
+        // Loss (already averaged over batch)
+        float loss = loss_fn.forward(logits, labels);
+
+        // Scale back to total
+        total_loss += loss * current_batch;
+
+        // Accuracy
+        for (int n = 0; n < current_batch; n++) {
+            int pred = argmax(logits, n);
+            if (pred == labels[n])
+                correct++;
+        }
     }
 
+    float avg_loss = total_loss / test_data.size();
     float accuracy =
-        (float)correct / test_data.size();
-    float avg_loss =
-        total_loss / test_data.size();
+        static_cast<float>(correct) / test_data.size();
 
     std::cout << "Test Loss: " << avg_loss << "\n";
     std::cout << "Test Accuracy: "
@@ -126,6 +166,7 @@ std::pair<float, float> Trainer::evaluate(const std::vector<Sample>& test_data) 
 }
 
 Tensor Trainer::augment(const Tensor& image, std::mt19937& rng){
+    assert(image.batch == 1);
     Tensor out = image;
 
     std::uniform_int_distribution<int> flip_dist(0, 1);
@@ -141,6 +182,7 @@ Tensor Trainer::augment(const Tensor& image, std::mt19937& rng){
 
 // Augmentation
 Tensor Trainer::horizontal_flip(const Tensor& img){
+    assert(img.batch == 1);
     Tensor out(img.rows, img.cols, img.depth);
 
     for(int r = 0; r < img.rows; r++){
@@ -154,6 +196,7 @@ Tensor Trainer::horizontal_flip(const Tensor& img){
 }
 
 Tensor Trainer::pad_image(const Tensor& img, int pad) {
+    assert(img.batch == 1);
     Tensor padded(
         img.rows + 2 * pad,
         img.cols + 2 * pad,
@@ -172,6 +215,7 @@ Tensor Trainer::pad_image(const Tensor& img, int pad) {
 }
 
 Tensor Trainer::random_crop(const Tensor& img, int crop_size, std::mt19937& rng) {
+    assert(img.batch == 1);
     int max_r = img.rows - crop_size;
     int max_c = img.cols - crop_size;
 

@@ -3,13 +3,15 @@
 Tensor Flatten::forward(const Tensor& x){
     
     input = &x;
-    Tensor out(x.rows*x.cols*x.depth, 1, 1);
-    int index = 0;
-
-    for(int i = 0; i < x.rows; i++){
-        for(int j = 0; j < x.cols; j++){
-            for(int k = 0; k < x.depth; k++){
-                out(index++,0,0) = x(i,j,k);
+    Tensor out(x.batch, x.rows*x.cols*x.depth, 1, 1);
+    
+    for(int b = 0; b < x.batch; b++){
+        int index = 0;
+        for(int i = 0; i < x.rows; i++){
+            for(int j = 0; j < x.cols; j++){
+                for(int k = 0; k < x.depth; k++){
+                    out(b, index++,0,0) = x(b, i, j, k);
+                }
             }
         }
     }
@@ -18,14 +20,16 @@ Tensor Flatten::forward(const Tensor& x){
 
 Tensor Flatten::backward(const Tensor& grad_out){
 
-    Tensor grad(input->rows, input->cols, input->depth);
-    int index = 0;
-
-    for(int i = 0; i < input->rows; i++){
-        for(int j = 0; j < input->cols; j++){
-            for(int k = 0; k < input->depth; k++){
-                grad(i, j, k) = grad_out(index, 0, 0);
-                index++;
+    Tensor grad(input->batch, input->rows, input->cols, input->depth);
+    
+    for(int b = 0; b < input->batch; b++){
+        int index = 0;
+        for(int i = 0; i < input->rows; i++){
+            for(int j = 0; j < input->cols; j++){
+                for(int k = 0; k < input->depth; k++){
+                    grad(b, i, j, k) = grad_out(b, index, 0, 0);
+                    index++;
+                }
             }
         }
     }

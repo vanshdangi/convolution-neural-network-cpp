@@ -14,36 +14,17 @@ Network::Network()
 Tensor Network::forward(const Tensor& x) {
     activations.clear();
 
-    Tensor out = conv1.forward(x);
-    activations.push_back(out);
+    activations.push_back(conv1.forward(x));
+    activations.push_back(r1.forward(activations.back()));
+    activations.push_back(maxPool1.forward(activations.back()));
+    activations.push_back(conv2.forward(activations.back()));
+    activations.push_back(r2.forward(activations.back()));
+    activations.push_back(maxPool2.forward(activations.back()));
+    activations.push_back(flatten.forward(activations.back()));
+    activations.push_back(d1.forward(activations.back()));
+    activations.push_back(r3.forward(activations.back()));
 
-    out = r1.forward(activations.back());
-    activations.push_back(out);
-
-    out = maxPool1.forward(activations.back());
-    activations.push_back(out);
-
-    out = conv2.forward(activations.back());
-    activations.push_back(out);
-
-    out = r2.forward(activations.back());
-    activations.push_back(out);
-
-    out = maxPool2.forward(activations.back());
-    activations.push_back(out);
-
-    out = flatten.forward(activations.back());
-    activations.push_back(out);
-
-    out = d1.forward(activations.back());
-    activations.push_back(out);
-
-    out = r3.forward(activations.back());
-    activations.push_back(out);
-
-    out = d2.forward(activations.back());
-
-    return out; // logits (10 × 1)
+    return d2.forward(activations.back());
 }
 
 void Network::backward(const Tensor& grad_logits){

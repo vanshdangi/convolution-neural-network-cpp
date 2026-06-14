@@ -25,16 +25,18 @@ Tensor Dense::forward(const Tensor& x) {
     input = &x;
 
     // Output: (out, 1)
-    Tensor out(W.rows, 1, 1);
+    Tensor out(x.batch, W.rows, 1, 1);
 
-    for (int i = 0; i < W.rows; ++i) {
-        float sum = 0.0f;
+    for (int n = 0; n < x.batch; n++) {
+        for (int i = 0; i < W.rows; ++i) {
+            float sum = 0.0f;
 
-        for (int j = 0; j < W.cols; ++j) {
-            sum += W(i, j, 0) * x(j, 0, 0);
+            for (int j = 0; j < W.cols; ++j) {
+                sum += W(i, j, 0) * x(n, j, 0, 0);
+            }
+
+            out(n, i, 0, 0) = sum + b(i, 0, 0);
         }
-
-        out(i, 0, 0) = sum + b(i, 0, 0);
     }
 
     // y = W*x + b
@@ -54,26 +56,32 @@ Tensor Dense::backward(const Tensor& grad_out) {
     db = Tensor(out, 1, 1);
 
     // Compute dW = grad_out * input^T
-    for (int i = 0; i < out; ++i) {
-        for (int j = 0; j < in; ++j) {
-            dW(i, j, 0) = grad_out(i, 0, 0) * (*input)(j, 0, 0);
+    for (int n = 0; n < grad_out.batch; n++) {
+        for (int i = 0; i < out; ++i) {
+            for (int j = 0; j < in; ++j) {
+                dW(i, j, 0) += grad_out(n, i, 0, 0) * (*input)(n, j, 0, 0);
+            }
         }
     }
 
     // Compute db = grad_out
-    for (int i = 0; i < out; ++i) {
-        db(i, 0, 0) = grad_out(i, 0, 0);
+    for (int n = 0; n < grad_out.batch; n++) {
+        for (int i = 0; i < out; ++i) {
+            db(i, 0, 0) += grad_out(n, i, 0, 0);
+        }
     }
 
     // Compute grad_input = W^T * grad_out
-    Tensor grad_input(in, 1, 1);
+    Tensor grad_input(grad_out.batch, in, 1, 1);
 
-    for (int j = 0; j < in; ++j) {
-        float sum = 0.0f;
-        for (int i = 0; i < out; ++i) {
-            sum += W(i, j, 0) * grad_out(i, 0, 0);
+    for (int n = 0; n < grad_out.batch; n++) {
+        for (int j = 0; j < in; ++j) {
+            float sum = 0.0f;
+            for (int i = 0; i < out; ++i) {
+                sum += W(i, j, 0) * grad_out(n, i, 0, 0);
+            }
+            grad_input(n, j, 0, 0) = sum;
         }
-        grad_input(j, 0, 0) = sum;
     }
 
     return grad_input;

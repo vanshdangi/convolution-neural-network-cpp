@@ -4,8 +4,8 @@
 class SoftmaxCrossEntropyLoss {
 public:
     Tensor probs;
-    int label;
+    std::vector<int> labels;
 
-    float forward(const Tensor& logits, int label);
+    float forward(const Tensor& logits, const std::vector<int>& labels);
     Tensor backward();
 };

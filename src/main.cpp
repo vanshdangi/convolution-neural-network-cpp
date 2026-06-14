@@ -17,13 +17,21 @@ int main() {
     {
         CIFAR10 dataset("data/");
 
+        std::vector<Sample> tiny_train(
+            dataset.train.begin(),
+            dataset.train.begin() + 32
+        );
+
         Network net;
         SGD optimizer(0.01f, 0.0005f);
         SoftmaxCrossEntropyLoss loss_fn;
 
         Trainer trainer(net, loss_fn, optimizer);
-        trainer.train(dataset.train,dataset.test, 40);
-        trainer.evaluate(dataset.test);
+
+        //trainer.train(tiny_train, tiny_train, 30, 8);
+        //trainer.evaluate(tiny_train, 8);
+        trainer.train(dataset.train,dataset.test, 40, 32);
+        trainer.evaluate(dataset.test, 32);
     }
     catch(const std::exception& e)
     {
