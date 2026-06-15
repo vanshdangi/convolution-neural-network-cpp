@@ -1,6 +1,7 @@
 #include "loss/softmax_cross_entropy_loss.h"
 #include <cmath>
 #include <iostream>
+#include <omp.h>
 
 float SoftmaxCrossEntropyLoss::forward(const Tensor& logits, const std::vector<int>& labels)
 {
@@ -10,6 +11,8 @@ float SoftmaxCrossEntropyLoss::forward(const Tensor& logits, const std::vector<i
 
     float total_loss = 0.0f;
 
+    // Parallelize over batch
+    #pragma omp parallel for reduction(+:total_loss) schedule(static)
     for (int b = 0; b < logits.batch; b++) {
         // Find max for this sample
         float max_val = logits(b, 0, 0, 0);
@@ -42,6 +45,8 @@ float SoftmaxCrossEntropyLoss::forward(const Tensor& logits, const std::vector<i
 Tensor SoftmaxCrossEntropyLoss::backward() {
     Tensor grad(probs.batch, probs.rows, 1, 1);
 
+    // Parallelize over batch
+    #pragma omp parallel for schedule(static)
     for (int b = 0; b < probs.batch; b++) {
         for (int i = 0; i < probs.rows; i++){
             grad(b, i, 0, 0) = probs(b, i, 0, 0);

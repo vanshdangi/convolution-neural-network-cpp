@@ -6,6 +6,8 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
+find_package(OpenMP REQUIRED)
+
 add_executable(convolution_neural_network
     src/main.cpp
     src/math/tensor.cpp
@@ -34,6 +36,8 @@ add_executable(convolution_neural_network
 target_include_directories(convolution_neural_network PRIVATE
     include
 )
+
+target_link_libraries(convolution_neural_network PRIVATE OpenMP::OpenMP_CXX)
 
 if(MSVC)
     target_compile_options(convolution_neural_network PRIVATE /O2 /arch:AVX2)

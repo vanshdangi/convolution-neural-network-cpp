@@ -1,5 +1,7 @@
 #include "layers/conv2d.h"
 #include <random>
+#include <omp.h>
+#include <vector>
 
 Conv2d::Conv2d(int in_channels, int out_channels, int kernel_size)
     : kernel_size(kernel_size){
@@ -42,6 +44,8 @@ Tensor Conv2d::forward(const Tensor& x){
 
     Tensor output(x.batch, H_out, W_out, out_channels);
     
+    // Parallelize over batch (inner f loop runs sequentially)
+    #pragma omp parallel for schedule(static)
     for(int b = 0; b < x.batch; b++){
         for(int f = 0; f < out_channels; f++){
             const Tensor& filter = filters[f];
@@ -70,17 +74,31 @@ Tensor Conv2d::forward(const Tensor& x){
 
 Tensor Conv2d::backward(const Tensor& grad_out){
 
+    // Initialize dW and db
     dW.clear();
     dW.resize(filters.size());
-    for (int f = 0; f < filters.size(); f++) {
+    for (int f = 0; f < (int)filters.size(); f++) {
         dW[f] = Tensor(kernel_size, kernel_size, input->depth);
     }
     db = Tensor(filters.size(), 1, 1);
 
+    int num_threads = omp_get_max_threads();
 
-    // Compute dW = grad_out * input^T
+    // Per-thread accumulators for dW and db to avoid races
+    std::vector<std::vector<Tensor>> dW_private(num_threads);
+    std::vector<Tensor> db_private(num_threads);
+    for (int t = 0; t < num_threads; ++t) {
+        dW_private[t].resize(filters.size());
+        for (int f = 0; f < (int)filters.size(); ++f)
+            dW_private[t][f] = Tensor(kernel_size, kernel_size, input->depth);
+        db_private[t] = Tensor(filters.size(), 1, 1);
+    }
+
+    // Accumulate dW and db in parallel over batch
+    #pragma omp parallel for schedule(static)
     for(int b = 0; b < grad_out.batch; b++){
-        for(int f = 0; f < filters.size(); f++){
+        int tid = omp_get_thread_num();
+        for(int f = 0; f < (int)filters.size(); f++){
             for (int i = 0; i < grad_out.rows; ++i) {
                 for (int j = 0; j < grad_out.cols; ++j) {
                     float grad = grad_out(b, i, j, f);
@@ -88,21 +106,38 @@ Tensor Conv2d::backward(const Tensor& grad_out){
                     for(int ki = 0; ki < kernel_size; ki++){
                         for(int kj = 0; kj < kernel_size; kj++){
                             for(int d = 0; d < input->depth; d++){
-                                dW[f](ki, kj, d) += (*input)(b, i+ki, j+kj, d)*grad;
+                                dW_private[tid][f](ki, kj, d) += (*input)(b, i+ki, j+kj, d)*grad;
                             }
                         }
                     }
+
+                    // db accumulation per-thread
+                    db_private[tid](f, 0, 0) += grad;
                 }
             }
         }
     }
 
-    // Compute grad_input = W^T * grad_out
+    // Reduce per-thread dW and db into shared dW and db
+    for (int f = 0; f < (int)filters.size(); ++f) {
+        for (int t = 0; t < num_threads; ++t) {
+            for (int ki = 0; ki < kernel_size; ++ki) {
+                for (int kj = 0; kj < kernel_size; ++kj) {
+                    for (int d = 0; d < input->depth; ++d) {
+                        dW[f](ki, kj, d) += dW_private[t][f](ki, kj, d);
+                    }
+                }
+            }
+            db(f, 0, 0) += db_private[t](f, 0, 0);
+        }
+    }
+
+    // Compute grad_input: parallelize over batch (each batch slice independent)
     Tensor grad_input(input->batch, input->rows, input->cols, input->depth);
 
+    #pragma omp parallel for schedule(static)
     for(int b = 0; b < grad_out.batch; b++){
-        for(int f = 0; f < filters.size(); f++){
-
+        for(int f = 0; f < (int)filters.size(); f++){
             for (int i = 0; i < grad_out.rows; ++i) {
                 for (int j = 0; j < grad_out.cols; ++j) {
                     float grad = grad_out(b, i, j, f);
@@ -116,19 +151,6 @@ Tensor Conv2d::backward(const Tensor& grad_out){
                     }
                 }
             }
-        }
-    }
-
-    // Compute db = grad_out
-    for(int b = 0; b < grad_out.batch; b++){
-        for(int k = 0; k < grad_out.depth; k++){
-            float sum = 0.0f;
-            for(int i = 0; i < grad_out.rows; i++){
-                for(int j = 0; j < grad_out.cols; j++){
-                    sum += grad_out(b, i, j, k);
-                }
-            }
-            db(k, 0, 0) += sum;
         }
     }
 

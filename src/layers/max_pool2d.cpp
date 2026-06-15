@@ -1,15 +1,18 @@
 #include "layers/max_pool2d.h"
+#include <omp.h>
 
 // 2d max pool of size 2x2 with stride 2
 Tensor MaxPool2D::forward(const Tensor& x){
     input = &x;
-    max_indices.clear();
+    max_indices.resize(x.batch * x.rows / 2 * x.cols / 2 * x.depth);
 
     int out_rows = x.rows/2;
     int out_cols = x.cols/2;
 
     Tensor output(x.batch, out_rows, out_cols, x.depth);
 
+    // Parallelize over batch
+    #pragma omp parallel for schedule(static)
     for(int b = 0; b < x.batch; b++){
         for(int d = 0; d < x.depth; d++){
             for(int i = 0; i < out_rows; i++){
@@ -33,7 +36,7 @@ Tensor MaxPool2D::forward(const Tensor& x){
                         }
                     }
                     output(b, i,j,d) = max_val;
-                    max_indices.push_back(max_idx);
+                    max_indices[b * out_rows * out_cols * x.depth + d * out_rows * out_cols + i * out_cols + j] = max_idx;
                 }
             }
         }
@@ -44,15 +47,15 @@ Tensor MaxPool2D::forward(const Tensor& x){
 Tensor MaxPool2D::backward(const Tensor& grad_out){
 
     Tensor grad(input->batch, input->rows, input->cols, input->depth);
-    int index = 0;
 
-    // max_indices were recorded in forward in the order: b, depth, out_row, out_col
-    // Mirror that ordering when scattering gradients back.
+    // Parallelize over batch
+    #pragma omp parallel for schedule(static)
     for (int b = 0; b < grad_out.batch; b++) {
         for (int d = 0; d < grad_out.depth; d++) {
             for (int i = 0; i < grad_out.rows; i++) {
                 for (int j = 0; j < grad_out.cols; j++) {
-                    grad.data[max_indices[index++]] += grad_out(b, i, j, d);
+                    int idx = b * grad_out.rows * grad_out.cols * grad_out.depth + d * grad_out.rows * grad_out.cols + i * grad_out.cols + j;
+                    grad.data[max_indices[idx]] += grad_out(b, i, j, d);
                 }
             }
         }

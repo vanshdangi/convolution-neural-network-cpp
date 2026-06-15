@@ -100,7 +100,7 @@ void Trainer::train(const std::vector<Sample>& train_data, const std::vector<Sam
         << " sec\n";
         
         // Auto LR scheduler
-        if (patience_counter >= 3 && optimizer.lr > 1e-5f) {
+        if (patience_counter >= 4 && optimizer.lr > 1e-5f) {
             optimizer.lr *= 0.1f;
             patience_counter = 0;
             std::cout << "LR scheduled for next epoch: " << optimizer.lr << "\n";
