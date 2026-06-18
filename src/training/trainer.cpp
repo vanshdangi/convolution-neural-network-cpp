@@ -21,6 +21,7 @@ void Trainer::train(const std::vector<Sample>& train_data, const std::vector<Sam
     int patience_counter = 0;
 
     for (int epoch = 0; epoch < epochs; ++epoch) {
+        net.train();
         auto start = std::chrono::high_resolution_clock::now();
 
         // Shuffle dataset every epoch
@@ -101,7 +102,7 @@ void Trainer::train(const std::vector<Sample>& train_data, const std::vector<Sam
         
         // Auto LR scheduler
         if (patience_counter >= 4 && optimizer.lr > 1e-5f) {
-            optimizer.lr *= 0.1f;
+            optimizer.lr *= 0.5f;
             patience_counter = 0;
             std::cout << "LR scheduled for next epoch: " << optimizer.lr << "\n";
         }
@@ -113,6 +114,7 @@ void Trainer::train(const std::vector<Sample>& train_data, const std::vector<Sam
 
 std::pair<float, float> Trainer::evaluate(const std::vector<Sample>& test_data, int batch_size)
 {
+    net.eval();
     int correct = 0;
     float total_loss = 0.0f;
 

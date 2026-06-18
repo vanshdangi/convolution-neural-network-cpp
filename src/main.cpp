@@ -31,8 +31,8 @@ int main() {
         //trainer.train(tiny_train, tiny_train, 30, 8);
         //trainer.evaluate(tiny_train, 8);
 
-        trainer.train(dataset.train,dataset.test, 100, 16);
-        //trainer.evaluate(dataset.test, 16);
+        trainer.train(dataset.train,dataset.test, 100, 32);
+        //trainer.evaluate(dataset.test, 32);
     }
     catch(const std::exception& e)
     {

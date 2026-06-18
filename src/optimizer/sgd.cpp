@@ -20,6 +20,12 @@ void SGD::step(Network& net){
         net.conv1.bias(i, 0, 0) -= lr * net.conv1.db(i, 0, 0);
     }
 
+    // BN1
+    for (int d = 0; d < net.bn1.gamma.size(); d++){
+        net.bn1.gamma[d] -= lr * net.bn1.dgamma[d];
+        net.bn1.beta[d] -= lr * net.bn1.dbeta[d];
+    }
+
     // Conv2
     for (int f = 0; f < net.conv2.filters.size(); f++){
         for (int i = 0; i < net.conv2.filters[f].rows; i++){
@@ -32,6 +38,12 @@ void SGD::step(Network& net){
     }
     for (int i = 0; i < net.conv2.bias.rows; i++){
         net.conv2.bias(i, 0, 0) -= lr * net.conv2.db(i, 0, 0);
+    }
+
+    // BN1
+    for (int d = 0; d < net.bn2.gamma.size(); d++){
+        net.bn2.gamma[d] -= lr * net.bn2.dgamma[d];
+        net.bn2.beta[d] -= lr * net.bn2.dbeta[d];
     }
 
     // d1

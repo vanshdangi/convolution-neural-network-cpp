@@ -4,22 +4,28 @@
 
 Network::Network()
     : conv1(3, 32, 3),      // RGB input -> 32 feature maps
+    bn1(32),
     conv2(32, 64, 3),     // 32 channels -> 64 feature maps
+    bn2(64),
     d1(2304, 128),
     d2(128, 10)
 {
-    activations.reserve(10);
+    activations.reserve(12);
 }
 
 Tensor Network::forward(const Tensor& x) {
     activations.clear();
 
     activations.push_back(conv1.forward(x));
+    activations.push_back(bn1.forward(activations.back()));
     activations.push_back(r1.forward(activations.back()));
     activations.push_back(maxPool1.forward(activations.back()));
+
     activations.push_back(conv2.forward(activations.back()));
+    activations.push_back(bn2.forward(activations.back()));
     activations.push_back(r2.forward(activations.back()));
     activations.push_back(maxPool2.forward(activations.back()));
+
     activations.push_back(flatten.forward(activations.back()));
     activations.push_back(d1.forward(activations.back()));
     activations.push_back(r3.forward(activations.back()));
@@ -28,20 +34,32 @@ Tensor Network::forward(const Tensor& x) {
 }
 
 void Network::backward(const Tensor& grad_logits){
-    // grad_logits: (10 × 1)
-    
     Tensor grad = grad_logits;
 
     grad = d2.backward(grad);
     grad = r3.backward(grad);
     grad = d1.backward(grad);
     grad = flatten.backward(grad);
+
     grad = maxPool2.backward(grad);
     grad = r2.backward(grad);
+    grad = bn2.backward(grad);
     grad = conv2.backward(grad);
+
     grad = maxPool1.backward(grad);
     grad = r1.backward(grad);
+    grad = bn1.backward(grad);
     grad = conv1.backward(grad);
+}
+
+void Network::train() {
+    bn1.training = true;
+    bn2.training = true;
+}
+
+void Network::eval() {
+    bn1.training = false;
+    bn2.training = false;
 }
 
 /*

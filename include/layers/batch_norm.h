@@ -15,6 +15,11 @@ public:
     std::vector<float> dgamma;
     std::vector<float> dbeta;
 
+    std::vector<float> running_mean;
+    std::vector<float> running_variance;
+    float momentum = 0.9f;
+    bool training = true;
+
     BatchNorm(int channels);
 
     Tensor forward(const Tensor& x);
