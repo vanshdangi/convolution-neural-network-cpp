@@ -10,6 +10,8 @@ float SoftmaxCrossEntropyLoss::forward(const Tensor& logits, const std::vector<i
     probs = Tensor(logits.batch, logits.rows, 1, 1);
 
     float total_loss = 0.0f;
+    const float eps = 0.1f;
+    const int num_classes = logits.rows;
 
     // Parallelize over batch
     #pragma omp parallel for reduction(+:total_loss) schedule(static)
@@ -35,8 +37,16 @@ float SoftmaxCrossEntropyLoss::forward(const Tensor& logits, const std::vector<i
         }
 
         // Loss for this sample
-        total_loss += -std::log(
-            probs(b, labels[b], 0, 0) + 1e-9f);
+
+        for (int i = 0; i < num_classes; i++) {
+            float target =
+                (i == labels[b])
+                ? (1.0f - eps)
+                : (eps / (num_classes - 1));
+
+            total_loss +=
+                -target * std::log(probs(b, i, 0, 0) + 1e-9f);
+        }
     }
 
     return total_loss / logits.batch;
@@ -44,6 +54,8 @@ float SoftmaxCrossEntropyLoss::forward(const Tensor& logits, const std::vector<i
 
 Tensor SoftmaxCrossEntropyLoss::backward() {
     Tensor grad(probs.batch, probs.rows, 1, 1);
+    const float eps = 0.1f;
+    const int num_classes = probs.rows;
 
     // Parallelize over batch
     #pragma omp parallel for schedule(static)
@@ -51,7 +63,14 @@ Tensor SoftmaxCrossEntropyLoss::backward() {
         for (int i = 0; i < probs.rows; i++){
             grad(b, i, 0, 0) = probs(b, i, 0, 0);
         }
-        grad(b, labels[b], 0, 0) -= 1.0f;
+        for (int i = 0; i < num_classes; i++) {
+            float target =
+                (i == labels[b])
+                ? (1.0f - eps)
+                : (eps / (num_classes - 1));
+
+            grad(b, i, 0, 0) -= target;
+        }
     }
     grad /= probs.batch;
 

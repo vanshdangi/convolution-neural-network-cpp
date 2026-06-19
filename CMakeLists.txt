@@ -19,6 +19,7 @@ add_executable(convolution_neural_network
     src/layers/flatten.cpp
     src/layers/dense.cpp
     src/layers/batch_norm.cpp
+    src/layers/dropout.cpp
 
     #Loss
     src/loss/softmax_cross_entropy_loss.cpp

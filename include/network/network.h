@@ -8,6 +8,7 @@
 #include "layers/flatten.h"
 #include "layers/dense.h"
 #include "layers/relu.h"
+#include "layers/dropout.h"
 #include "layers/batch_norm.h"
 
 class Network {
@@ -30,6 +31,7 @@ public:
     Flatten flatten;
     Dense d1;
     ReLU r4;
+    Dropout dropout;
     Dense d2;
 
     std::vector<Tensor> activations;

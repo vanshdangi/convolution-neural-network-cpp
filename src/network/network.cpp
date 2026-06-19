@@ -10,6 +10,7 @@ Network::Network()
     conv3(64, 128, 3),
     bn3(128),
     d1(512, 256),
+    dropout(0.5f),
     d2(256, 10)
 {
     activations.reserve(16);
@@ -36,6 +37,7 @@ Tensor Network::forward(const Tensor& x) {
     activations.push_back(flatten.forward(activations.back()));
     activations.push_back(d1.forward(activations.back()));
     activations.push_back(r4.forward(activations.back()));
+    activations.push_back(dropout.forward(activations.back()));
 
     return d2.forward(activations.back());
 }
@@ -44,6 +46,7 @@ void Network::backward(const Tensor& grad_logits){
     Tensor grad = grad_logits;
 
     grad = d2.backward(grad);
+    grad = dropout.backward(grad);
     grad = r4.backward(grad);
     grad = d1.backward(grad);
     grad = flatten.backward(grad);
@@ -68,12 +71,14 @@ void Network::train() {
     bn1.training = true;
     bn2.training = true;
     bn3.training = true;
+    dropout.training = true;
 }
 
 void Network::eval() {
     bn1.training = false;
     bn2.training = false;
     bn3.training = false;
+    dropout.training = false;
 }
 
 /*
