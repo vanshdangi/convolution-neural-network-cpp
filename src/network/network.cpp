@@ -10,7 +10,7 @@ Network::Network()
     conv3(64, 128, 3),
     bn3(128),
     d1(512, 256),
-    dropout(0.5f),
+    dropout(0.3f),
     d2(256, 10)
 {
     activations.reserve(16);

@@ -106,7 +106,7 @@ void Trainer::train(const std::vector<Sample>& train_data, const std::vector<Sam
             patience_counter = 0;
             std::cout << "LR scheduled for next epoch: " << optimizer.lr << "\n";
         }
-        if (patience_counter >= 8 && optimizer.lr <= 5e-4f)
+        if (patience_counter >= 12 && optimizer.lr <= 5e-4f)
             break;
         std::cout << "--------------------------------------------------\n";
     }
@@ -178,6 +178,7 @@ Tensor Trainer::augment(const Tensor& image, std::mt19937& rng){
 
     out = pad_image(out, 4);
     out = random_crop(out, 32, rng);
+    out = cutout(out, 8, rng);
 
     return out;
 }
@@ -239,4 +240,34 @@ Tensor Trainer::random_crop(const Tensor& img, int crop_size, std::mt19937& rng)
     }
 
     return cropped;
+}
+
+Tensor Trainer::cutout(const Tensor& img, int mask_size, std::mt19937& rng){
+    assert(img.batch == 1);
+
+    Tensor out = img;
+
+    std::uniform_int_distribution<int> row_dist(0, img.rows - 1);
+    std::uniform_int_distribution<int> col_dist(0, img.cols - 1);
+
+    int center_r = row_dist(rng);
+    int center_c = col_dist(rng);
+
+    int half = mask_size / 2;
+
+    int r_start = std::max(0, center_r - half);
+    int r_end   = std::min(img.rows, center_r + half);
+
+    int c_start = std::max(0, center_c - half);
+    int c_end   = std::min(img.cols, center_c + half);
+
+    for(int r = r_start; r < r_end; r++){
+        for(int c = c_start; c < c_end; c++){
+            for(int d = 0; d < img.depth; d++){
+                out(r, c, d) = 0.0f;
+            }
+        }
+    }
+
+    return out;
 }

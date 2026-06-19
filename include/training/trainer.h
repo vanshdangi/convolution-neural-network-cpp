@@ -20,6 +20,7 @@ public:
     Tensor horizontal_flip(const Tensor& img);
     Tensor pad_image(const Tensor& img, int pad);
     Tensor random_crop(const Tensor& img, int crop_size, std::mt19937& rng);
+    Tensor cutout(const Tensor& img, int mask_size, std::mt19937& rng);
 
 private:
     Network& net;
