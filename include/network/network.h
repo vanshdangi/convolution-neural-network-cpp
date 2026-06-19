@@ -16,13 +16,20 @@ public:
     BatchNorm bn1;
     ReLU r1;
     MaxPool2D maxPool1;
+    
     Conv2d conv2;
     BatchNorm bn2;
     ReLU r2;
     MaxPool2D maxPool2;
+
+    Conv2d conv3;
+    BatchNorm bn3;
+    ReLU r3;
+    MaxPool2D maxPool3;
+
     Flatten flatten;
     Dense d1;
-    ReLU r3;
+    ReLU r4;
     Dense d2;
 
     std::vector<Tensor> activations;

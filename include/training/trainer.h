@@ -1,7 +1,7 @@
 #pragma once
 #include "network/network.h"
 #include "loss/softmax_cross_entropy_loss.h"
-#include "optimizer/SGD.h"
+#include "optimizer/sgd.h"
 #include "training/cifar_10.h"
 #include "math/tensor.h"
 #include <random>

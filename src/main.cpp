@@ -1,7 +1,7 @@
 #include <iostream>
 #include "math/tensor.h"
 #include "network/network.h"
-#include "loss./softmax_cross_entropy_loss.h"
+#include "loss/softmax_cross_entropy_loss.h"
 #include "training/trainer.h"
 #include "training/cifar_10.h"
 #include "optimizer/sgd.h"
@@ -23,7 +23,7 @@ int main() {
         );
 
         Network net;
-        SGD optimizer(0.02f, 0.0005f);
+        SGD optimizer(0.01f, 0.0005f, 0.9f);
         SoftmaxCrossEntropyLoss loss_fn;
 
         Trainer trainer(net, loss_fn, optimizer);
@@ -31,7 +31,7 @@ int main() {
         //trainer.train(tiny_train, tiny_train, 30, 8);
         //trainer.evaluate(tiny_train, 8);
 
-        trainer.train(dataset.train,dataset.test, 100, 32);
+        trainer.train(dataset.train,dataset.test, 120, 32);
         //trainer.evaluate(dataset.test, 32);
     }
     catch(const std::exception& e)

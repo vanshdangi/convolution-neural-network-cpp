@@ -7,10 +7,12 @@ Network::Network()
     bn1(32),
     conv2(32, 64, 3),     // 32 channels -> 64 feature maps
     bn2(64),
-    d1(2304, 128),
-    d2(128, 10)
+    conv3(64, 128, 3),
+    bn3(128),
+    d1(512, 256),
+    d2(256, 10)
 {
-    activations.reserve(12);
+    activations.reserve(16);
 }
 
 Tensor Network::forward(const Tensor& x) {
@@ -26,9 +28,14 @@ Tensor Network::forward(const Tensor& x) {
     activations.push_back(r2.forward(activations.back()));
     activations.push_back(maxPool2.forward(activations.back()));
 
+    activations.push_back(conv3.forward(activations.back()));
+    activations.push_back(bn3.forward(activations.back()));
+    activations.push_back(r3.forward(activations.back()));
+    activations.push_back(maxPool3.forward(activations.back()));
+
     activations.push_back(flatten.forward(activations.back()));
     activations.push_back(d1.forward(activations.back()));
-    activations.push_back(r3.forward(activations.back()));
+    activations.push_back(r4.forward(activations.back()));
 
     return d2.forward(activations.back());
 }
@@ -37,9 +44,14 @@ void Network::backward(const Tensor& grad_logits){
     Tensor grad = grad_logits;
 
     grad = d2.backward(grad);
-    grad = r3.backward(grad);
+    grad = r4.backward(grad);
     grad = d1.backward(grad);
     grad = flatten.backward(grad);
+
+    grad = maxPool3.backward(grad);
+    grad = r3.backward(grad);
+    grad = bn3.backward(grad);
+    grad = conv3.backward(grad);
 
     grad = maxPool2.backward(grad);
     grad = r2.backward(grad);
@@ -55,11 +67,13 @@ void Network::backward(const Tensor& grad_logits){
 void Network::train() {
     bn1.training = true;
     bn2.training = true;
+    bn3.training = true;
 }
 
 void Network::eval() {
     bn1.training = false;
     bn2.training = false;
+    bn3.training = false;
 }
 
 /*
@@ -112,6 +126,37 @@ void Network::save(const std::string& filename) const
     out.write(
         reinterpret_cast<const char*>(conv2.bias.data.data()),
         conv2.bias.data.size() * sizeof(float));
+
+    // Conv3 filters
+    for(const auto& filter : conv3.filters)
+    {
+        out.write(
+            reinterpret_cast<const char*>(filter.data.data()),
+            filter.data.size() * sizeof(float));
+    }
+
+    // Conv3 bias
+    out.write(
+        reinterpret_cast<const char*>(conv3.bias.data.data()),
+        conv3.bias.data.size() * sizeof(float));
+
+    // BN1 parameters
+    out.write(reinterpret_cast<const char*>(bn1.gamma.data()), bn1.gamma.size() * sizeof(float));
+    out.write(reinterpret_cast<const char*>(bn1.beta.data()), bn1.beta.size() * sizeof(float));
+    out.write(reinterpret_cast<const char*>(bn1.running_mean.data()), bn1.running_mean.size() * sizeof(float));
+    out.write(reinterpret_cast<const char*>(bn1.running_variance.data()), bn1.running_variance.size() * sizeof(float));
+
+    // BN2 parameters
+    out.write(reinterpret_cast<const char*>(bn2.gamma.data()), bn2.gamma.size() * sizeof(float));
+    out.write(reinterpret_cast<const char*>(bn2.beta.data()), bn2.beta.size() * sizeof(float));
+    out.write(reinterpret_cast<const char*>(bn2.running_mean.data()), bn2.running_mean.size() * sizeof(float));
+    out.write(reinterpret_cast<const char*>(bn2.running_variance.data()), bn2.running_variance.size() * sizeof(float));
+
+    // BN3 parameters
+    out.write(reinterpret_cast<const char*>(bn3.gamma.data()), bn3.gamma.size() * sizeof(float));
+    out.write(reinterpret_cast<const char*>(bn3.beta.data()), bn3.beta.size() * sizeof(float));
+    out.write(reinterpret_cast<const char*>(bn3.running_mean.data()), bn3.running_mean.size() * sizeof(float));
+    out.write(reinterpret_cast<const char*>(bn3.running_variance.data()), bn3.running_variance.size() * sizeof(float));
 
     // Dense1 weights
     out.write(
@@ -169,6 +214,37 @@ void Network::load(const std::string& filename)
     in.read(
         reinterpret_cast<char*>(conv2.bias.data.data()),
         conv2.bias.data.size() * sizeof(float));
+
+    // Conv3 filters
+    for(auto& filter : conv3.filters)
+    {
+        in.read(
+            reinterpret_cast<char*>(filter.data.data()),
+            filter.data.size() * sizeof(float));
+    }
+
+    // Conv3 bias
+    in.read(
+        reinterpret_cast<char*>(conv3.bias.data.data()),
+        conv3.bias.data.size() * sizeof(float));
+
+    // BN1 parameters
+    in.read(reinterpret_cast<char*>(bn1.gamma.data()), bn1.gamma.size() * sizeof(float));
+    in.read(reinterpret_cast<char*>(bn1.beta.data()), bn1.beta.size() * sizeof(float));
+    in.read(reinterpret_cast<char*>(bn1.running_mean.data()), bn1.running_mean.size() * sizeof(float));
+    in.read(reinterpret_cast<char*>(bn1.running_variance.data()), bn1.running_variance.size() * sizeof(float));
+
+    // BN2 parameters
+    in.read(reinterpret_cast<char*>(bn2.gamma.data()), bn2.gamma.size() * sizeof(float));
+    in.read(reinterpret_cast<char*>(bn2.beta.data()), bn2.beta.size() * sizeof(float));
+    in.read(reinterpret_cast<char*>(bn2.running_mean.data()), bn2.running_mean.size() * sizeof(float));
+    in.read(reinterpret_cast<char*>(bn2.running_variance.data()), bn2.running_variance.size() * sizeof(float));
+
+    // BN3 parameters
+    in.read(reinterpret_cast<char*>(bn3.gamma.data()), bn3.gamma.size() * sizeof(float));
+    in.read(reinterpret_cast<char*>(bn3.beta.data()), bn3.beta.size() * sizeof(float));
+    in.read(reinterpret_cast<char*>(bn3.running_mean.data()), bn3.running_mean.size() * sizeof(float));
+    in.read(reinterpret_cast<char*>(bn3.running_variance.data()), bn3.running_variance.size() * sizeof(float));
 
     // Dense1 weights
     in.read(
