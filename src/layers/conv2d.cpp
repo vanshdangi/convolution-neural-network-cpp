@@ -3,8 +3,8 @@
 #include <omp.h>
 #include <vector>
 
-Conv2d::Conv2d(int in_channels, int out_channels, int kernel_size)
-    : kernel_size(kernel_size){
+Conv2d::Conv2d(int in_channels, int out_channels, int kernel_size, int padding)
+    : kernel_size(kernel_size), padding(padding){
 
     filters.reserve(out_channels);
 
@@ -38,8 +38,9 @@ Conv2d::Conv2d(int in_channels, int out_channels, int kernel_size)
 Tensor Conv2d::forward(const Tensor& x){
     input = &x;
 
-    int H_out = x.rows - kernel_size + 1;
-    int W_out = x.cols - kernel_size + 1;
+    Tensor padded_x = (padding > 0) ? x.pad(padding) : x;
+    int H_out = padded_x.rows - kernel_size + 1;
+    int W_out = padded_x.cols - kernel_size + 1;
     int out_channels = filters.size();
 
     Tensor output(x.batch, H_out, W_out, out_channels);
@@ -57,7 +58,7 @@ Tensor Conv2d::forward(const Tensor& x){
                     for(int ki = 0; ki < kernel_size; ki++){
                         for(int kj = 0; kj < kernel_size; kj++){
                             for(int d = 0; d < x.depth; d++){
-                                sum += x(b, i+ki, j+kj, d)*filter(ki,kj,d);
+                                sum += padded_x(b, i+ki, j+kj, d) * filter(ki, kj, d);
                             }
                         }
                     }
@@ -94,6 +95,8 @@ Tensor Conv2d::backward(const Tensor& grad_out){
         db_private[t] = Tensor(filters.size(), 1, 1);
     }
 
+    Tensor padded_input = (padding > 0) ? input->pad(padding) : *input;
+
     // Accumulate dW and db in parallel over batch
     #pragma omp parallel for schedule(static)
     for(int b = 0; b < grad_out.batch; b++){
@@ -106,7 +109,7 @@ Tensor Conv2d::backward(const Tensor& grad_out){
                     for(int ki = 0; ki < kernel_size; ki++){
                         for(int kj = 0; kj < kernel_size; kj++){
                             for(int d = 0; d < input->depth; d++){
-                                dW_private[tid][f](ki, kj, d) += (*input)(b, i+ki, j+kj, d)*grad;
+                                dW_private[tid][f](ki, kj, d) += padded_input(b, i+ki, j+kj, d) * grad;
                             }
                         }
                     }
@@ -132,8 +135,10 @@ Tensor Conv2d::backward(const Tensor& grad_out){
         }
     }
 
-    // Compute grad_input: parallelize over batch (each batch slice independent)
-    Tensor grad_input(input->batch, input->rows, input->cols, input->depth);
+    Tensor grad_input_padded(input->batch,
+                              input->rows + 2 * padding,
+                              input->cols + 2 * padding,
+                              input->depth);
 
     #pragma omp parallel for schedule(static)
     for(int b = 0; b < grad_out.batch; b++){
@@ -145,10 +150,25 @@ Tensor Conv2d::backward(const Tensor& grad_out){
                     for(int ki = 0; ki < kernel_size; ki++){
                         for(int kj = 0; kj < kernel_size; kj++){
                             for(int d = 0; d < input->depth; d++){
-                                grad_input(b, i+ki, j+kj, d) += filters[f](ki, kj, d) * grad;
+                                grad_input_padded(b, i+ki, j+kj, d) += filters[f](ki, kj, d) * grad;
                             }
                         }
                     }
+                }
+            }
+        }
+    }
+
+    if (padding == 0) {
+        return grad_input_padded;
+    }
+
+    Tensor grad_input(input->batch, input->rows, input->cols, input->depth);
+    for (int b = 0; b < input->batch; ++b) {
+        for (int r = 0; r < input->rows; ++r) {
+            for (int c = 0; c < input->cols; ++c) {
+                for (int d = 0; d < input->depth; ++d) {
+                    grad_input(b, r, c, d) = grad_input_padded(b, r + padding, c + padding, d);
                 }
             }
         }

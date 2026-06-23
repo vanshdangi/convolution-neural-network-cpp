@@ -3,14 +3,14 @@
 #include <stdexcept>
 
 Network::Network()
-    : conv1(3, 32, 3),      // RGB input -> 32 feature maps
+    : conv1(3, 32, 3, 1),      // RGB input -> 32 feature maps
     bn1(32),
-    conv2(32, 64, 3),     // 32 channels -> 64 feature maps
+    conv2(32, 64, 3, 1),     // 32 channels -> 64 feature maps
     bn2(64),
     conv3(64, 128, 3),
     bn3(128),
-    d1(512, 256),
-    dropout(0.3f),
+    d1(1152, 256),
+    dropout(0.0f),
     d2(256, 10)
 {
     activations.reserve(16);

@@ -10,7 +10,7 @@ float SoftmaxCrossEntropyLoss::forward(const Tensor& logits, const std::vector<i
     probs = Tensor(logits.batch, logits.rows, 1, 1);
 
     float total_loss = 0.0f;
-    const float eps = 0.1f;
+    const float eps = smoothing;
     const int num_classes = logits.rows;
 
     // Parallelize over batch
@@ -54,7 +54,7 @@ float SoftmaxCrossEntropyLoss::forward(const Tensor& logits, const std::vector<i
 
 Tensor SoftmaxCrossEntropyLoss::backward() {
     Tensor grad(probs.batch, probs.rows, 1, 1);
-    const float eps = 0.1f;
+    const float eps = smoothing;
     const int num_classes = probs.rows;
 
     // Parallelize over batch
