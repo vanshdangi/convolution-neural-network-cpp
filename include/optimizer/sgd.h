@@ -4,6 +4,8 @@
 class SGD {
 public:
     float lr;
+    float initial_lr;
+    float min_lr;
     float weight_decay;
     float momentum;
 

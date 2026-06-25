@@ -21,6 +21,15 @@ void Trainer::train(const std::vector<Sample>& train_data, const std::vector<Sam
     int patience_counter = 0;
 
     for (int epoch = 0; epoch < epochs; ++epoch) {
+
+        // Learning-Rate Scheduler (Cosine Annealing Scheduler)
+        float progress = (float)epoch / (epochs - 1);
+        optimizer.lr =
+            optimizer.min_lr +
+            0.5f * (optimizer.initial_lr - optimizer.min_lr) *
+            (1.0f + std::cos(progress * 3.14159265f));
+            
+        // Enable Train Mode and Start Timer
         net.train();
         auto start = std::chrono::high_resolution_clock::now();
 
@@ -31,9 +40,7 @@ void Trainer::train(const std::vector<Sample>& train_data, const std::vector<Sam
         int correct = 0;
 
         for (size_t i = 0; i < shuffled_data.size(); i += batch_size) {
-            int current_batch =
-                std::min(batch_size,
-                        (int)(shuffled_data.size() - i));
+            int current_batch = std::min(batch_size, (int)(shuffled_data.size() - i));
 
             Tensor batch(current_batch, 32, 32, 3);
             std::vector<int> labels(current_batch);
@@ -74,19 +81,14 @@ void Trainer::train(const std::vector<Sample>& train_data, const std::vector<Sam
         // Evaluate on test set
         auto [test_loss, test_accuracy] = evaluate(test_data, batch_size);
 
-        // Save best model
+        // Save best model/ Patience Counter
         if (test_accuracy > best_test_accuracy){
             best_test_accuracy = test_accuracy;
             net.save("best_model.bin");
-        }
-
-        if (test_loss < best_test_loss){
-            best_test_loss = test_loss;
             patience_counter = 0;
-        } else{
+        }else{
             patience_counter++;
         }
-
         
         auto end = std::chrono::high_resolution_clock::now();
         
@@ -99,16 +101,11 @@ void Trainer::train(const std::vector<Sample>& train_data, const std::vector<Sam
         std::cout << "Epoch Time: "
         << std::chrono::duration<double>(end - start).count()
         << " sec\n";
-        
-        // Auto LR scheduler
-        if (patience_counter >= 4 && optimizer.lr > 1e-4f) {
-            optimizer.lr *= 0.5f;
-            patience_counter = 0;
-            std::cout << "LR scheduled for next epoch: " << optimizer.lr << "\n";
-        }
-        if (patience_counter >= 12 && optimizer.lr <= 1e-4f)
-            break;
         std::cout << "--------------------------------------------------\n";
+
+        if(patience_counter >= 12){
+            break;
+        }
     }
 }
 

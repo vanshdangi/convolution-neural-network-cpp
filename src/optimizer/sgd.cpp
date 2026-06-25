@@ -1,7 +1,8 @@
 #include "optimizer/sgd.h"
 
 SGD::SGD(float learning_rate, float wd, float momentum_coeff)
-    : lr(learning_rate), weight_decay(wd), momentum(momentum_coeff), velocity_initialized(false) {}
+    : lr(learning_rate), initial_lr(lr), min_lr(1e-5f),
+    weight_decay(wd), momentum(momentum_coeff), velocity_initialized(false) {}
 
 void SGD::init_velocity(Network& net) {
     if (velocity_initialized)

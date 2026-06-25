@@ -5,9 +5,9 @@
 Network::Network()
     : conv1(3, 32, 3, 1),      // RGB input -> 32 feature maps
     bn1(32),
-    conv2(32, 64, 3, 1),     // 32 channels -> 64 feature maps
+    conv2(32, 64, 3, 1),      // 32 channels -> 64 feature maps
     bn2(64),
-    conv3(64, 128, 3),
+    conv3(64, 128, 3),     // 64 channels -> 128 feature maps
     bn3(128),
     d1(1152, 256),
     dropout(0.0f),
