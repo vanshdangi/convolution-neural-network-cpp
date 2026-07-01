@@ -4,7 +4,7 @@
 class Flatten
 {
 public:
-    const Tensor* input = nullptr;
+    Tensor input;
 
     Tensor forward(const Tensor& x);
     Tensor backward(const Tensor& grad_out);

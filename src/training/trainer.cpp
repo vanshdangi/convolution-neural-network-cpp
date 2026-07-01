@@ -4,6 +4,7 @@
 #include <algorithm>
 #include <random>
 #include <chrono>
+#include <fstream>
 
 Trainer::Trainer(Network& n,
                 SoftmaxCrossEntropyLoss& lf,
@@ -84,11 +85,21 @@ void Trainer::train(const std::vector<Sample>& train_data, const std::vector<Sam
         // Save best model/ Patience Counter
         if (test_accuracy > best_test_accuracy){
             best_test_accuracy = test_accuracy;
+            
             net.save("best_model.bin");
-            patience_counter = 0;
-        }else{
-            patience_counter++;
+            std::ofstream meta("best_model_meta.txt");
+            meta << epoch + 1 << "\n";
+            meta << optimizer.lr << "\n";
+            meta << test_accuracy << "\n";
+            meta << test_loss << "\n";
         }
+
+        net.save("latest_model.bin");
+        std::ofstream meta("latest_model_meta.txt");
+        meta << epoch + 1 << "\n";
+        meta << optimizer.lr << "\n";
+        meta << test_accuracy << "\n";
+        meta << test_loss << "\n";
         
         auto end = std::chrono::high_resolution_clock::now();
         

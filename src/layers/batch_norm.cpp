@@ -18,7 +18,7 @@ Tensor BatchNorm::forward(const Tensor& x){
     int size = x.batch*x.rows*x.cols;
     
     if(training) {
-        input = &x;
+        input = x;
         // Mean
         #pragma omp parallel for schedule(static)
         for(int d = 0; d < x.depth; d++){
@@ -101,13 +101,13 @@ Tensor BatchNorm::forward(const Tensor& x){
 
 Tensor BatchNorm::backward(const Tensor& grad_out){
 
-    assert(grad_out.batch == input->batch);
-    assert(grad_out.rows  == input->rows);
-    assert(grad_out.cols  == input->cols);
-    assert(grad_out.depth == input->depth);
+    assert(grad_out.batch == input.batch);
+    assert(grad_out.rows  == input.rows);
+    assert(grad_out.cols  == input.cols);
+    assert(grad_out.depth == input.depth);
 
-    dbeta.assign(input->depth, 0.0f);
-    dgamma.assign(input->depth, 0.0f);
+    dbeta.assign(input.depth, 0.0f);
+    dgamma.assign(input.depth, 0.0f);
 
     // dBeta and dGamma
     #pragma omp parallel for schedule(static)
@@ -128,10 +128,10 @@ Tensor BatchNorm::backward(const Tensor& grad_out){
         dgamma[d] = gamma_sum;
     }
 
-    int size = input->batch*input->rows*input->cols;
+    int size = input.batch*input.rows*input.cols;
 
     // dX
-    Tensor grad_input(input->batch, input->rows, input->cols, input->depth);
+    Tensor grad_input(input.batch, input.rows, input.cols, input.depth);
     #pragma omp parallel for schedule(static)
     for(int d = 0; d < grad_out.depth; d++){
         for(int b = 0; b < grad_out.batch; b++){

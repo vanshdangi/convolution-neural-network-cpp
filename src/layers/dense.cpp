@@ -24,7 +24,7 @@ Dense::Dense(int in, int out)
 
 Tensor Dense::forward(const Tensor& x) {
     // Cache input for backprop later
-    input = &x;
+    input = x;
 
     // Output: (out, 1)
     Tensor out(x.batch, W.rows, 1, 1);
@@ -73,7 +73,7 @@ Tensor Dense::backward(const Tensor& grad_out) {
         int tid = omp_get_thread_num();
         for (int i = 0; i < out; ++i) {
             for (int j = 0; j < in; ++j) {
-                dW_private[tid](i, j, 0) += grad_out(n, i, 0, 0) * (*input)(n, j, 0, 0);
+                dW_private[tid](i, j, 0) += grad_out(n, i, 0, 0) * (input)(n, j, 0, 0);
             }
         }
         for (int i = 0; i < out; ++i) {

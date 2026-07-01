@@ -13,7 +13,7 @@ public:
     Tensor backward(const Tensor& grad_out);
 
 private:
-    const Tensor* input = nullptr;
+    Tensor input;
     Tensor mask;
     std::mt19937 rng;
 };

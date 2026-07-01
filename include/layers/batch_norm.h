@@ -4,7 +4,7 @@
 
 class BatchNorm {
 public:
-    const Tensor* input = nullptr;
+    Tensor input;
     Tensor x_hat;
     std::vector<float> mean;
     std::vector<float> variance;

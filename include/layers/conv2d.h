@@ -4,7 +4,7 @@
 
 class Conv2d {
 public:
-    const Tensor* input = nullptr;
+    Tensor input;
     int kernel_size;
     int padding;
     std::vector<Tensor> filters;

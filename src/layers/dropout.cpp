@@ -10,7 +10,7 @@ Dropout::Dropout(float prob)
 }
 
 Tensor Dropout::forward(const Tensor& x) {
-    input = &x;
+    input = x;
     mask = Tensor(x.batch, x.rows, x.cols, x.depth);
     Tensor out(x.batch, x.rows, x.cols, x.depth);
 
@@ -43,8 +43,7 @@ Tensor Dropout::forward(const Tensor& x) {
 }
 
 Tensor Dropout::backward(const Tensor& grad_out) {
-    assert(input != nullptr);
-    Tensor grad_input(input->batch, input->rows, input->cols, input->depth);
+    Tensor grad_input(input.batch, input.rows, input.cols, input.depth);
 
     #pragma omp parallel for schedule(static)
     for (int i = 0; i < grad_out.size(); i++) {

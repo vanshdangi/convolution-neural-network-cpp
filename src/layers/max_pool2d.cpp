@@ -3,7 +3,7 @@
 
 // 2d max pool of size 2x2 with stride 2
 Tensor MaxPool2D::forward(const Tensor& x){
-    input = &x;
+    input = x;
     max_indices.resize(x.batch * x.rows / 2 * x.cols / 2 * x.depth);
 
     int out_rows = x.rows/2;
@@ -46,7 +46,7 @@ Tensor MaxPool2D::forward(const Tensor& x){
 
 Tensor MaxPool2D::backward(const Tensor& grad_out){
 
-    Tensor grad(input->batch, input->rows, input->cols, input->depth);
+    Tensor grad(input.batch, input.rows, input.cols, input.depth);
 
     // Parallelize over batch
     #pragma omp parallel for schedule(static)

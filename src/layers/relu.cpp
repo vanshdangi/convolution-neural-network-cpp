@@ -2,7 +2,7 @@
 #include <omp.h>
 
 Tensor ReLU::forward(const Tensor& x) {
-    input = &x;  // cache for backprop later
+    input = x;  // cache for backprop later
 
     Tensor out(x.batch, x.rows, x.cols, x.depth);
 
@@ -22,15 +22,15 @@ Tensor ReLU::forward(const Tensor& x) {
 }
 
 Tensor ReLU::backward(const Tensor& grad_out) {
-    Tensor grad_input(input->batch, input->rows, input->cols, input->depth);
+    Tensor grad_input(input.batch, input.rows, input.cols, input.depth);
 
     // Parallelize over batch
     #pragma omp parallel for schedule(static)
-    for (int b = 0; b < input->batch; b++) {
-        for (int i = 0; i < input->rows; i++) {
-            for (int j = 0; j < input->cols; j++) {
-                for (int k = 0; k < input->depth; k++){
-                    if ((*input)(b, i, j, k) > 0.0f)
+    for (int b = 0; b < input.batch; b++) {
+        for (int i = 0; i < input.rows; i++) {
+            for (int j = 0; j < input.cols; j++) {
+                for (int k = 0; k < input.depth; k++){
+                    if ((input)(b, i, j, k) > 0.0f)
                         grad_input(b, i, j, k) = grad_out(b, i, j, k);
                     else
                         grad_input(b, i, j, k) = 0.0f;
