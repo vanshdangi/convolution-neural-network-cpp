@@ -10,29 +10,31 @@
 #include "layers/relu.h"
 #include "layers/dropout.h"
 #include "layers/batch_norm.h"
+#include "layers/res_block.h"
+#include "layers/global_avg_pool.h"
 
 class Network {
 public:
     Conv2d conv1;
     BatchNorm bn1;
     ReLU r1;
-    MaxPool2D maxPool1;
-    
-    Conv2d conv2;
-    BatchNorm bn2;
     ReLU r2;
+
+    Dense d1;
+    Dense d2;
+
+    Dropout dropout;
+
+    ResidualBlock res1;
+    MaxPool2D maxPool1;
+
+    ResidualBlock res2;
     MaxPool2D maxPool2;
 
-    Conv2d conv3;
-    BatchNorm bn3;
-    ReLU r3;
+    ResidualBlock res3;
     MaxPool2D maxPool3;
 
-    Flatten flatten;
-    Dense d1;
-    ReLU r4;
-    Dropout dropout;
-    Dense d2;
+    GAP gap;
 
     std::vector<Tensor> activations;
 

@@ -21,6 +21,7 @@ add_executable(convolution_neural_network
     src/layers/batch_norm.cpp
     src/layers/dropout.cpp
     src/layers/global_avg_pool.cpp
+    src/layers/res_block.cpp
 
     #Loss
     src/loss/softmax_cross_entropy_loss.cpp
