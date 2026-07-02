@@ -1,6 +1,5 @@
 #include "loss/softmax_cross_entropy_loss.h"
 #include <cmath>
-#include <iostream>
 #include <omp.h>
 
 SoftmaxCrossEntropyLoss::SoftmaxCrossEntropyLoss(float smoothing)

@@ -1,6 +1,5 @@
 #pragma once
 #include "math/tensor.h"
-#include <iostream>
 
 class BatchNorm {
 public:

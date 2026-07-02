@@ -91,24 +91,6 @@ void Network::eval() {
     dropout.training = false;
 }
 
-/*
-32x32x3
--> Conv(16,3)
-30x30x32
--> Pool
-15x15x32
--> Conv(32,3)
-13x13x64
--> Pool
-6x6x64
--> Flatten
-2304
--> Dense(128)
-128
--> Dense(10)
-10
-*/
-
 void Network::save(const std::string& filename) const {
     std::ofstream out(filename, std::ios::binary);
 

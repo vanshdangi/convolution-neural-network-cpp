@@ -1,5 +1,6 @@
 #include "layers/batch_norm.h"
 #include <omp.h>
+#include <cmath>
 
 BatchNorm::BatchNorm(int channels){
     gamma = std::vector<float>(channels, 1.0f);

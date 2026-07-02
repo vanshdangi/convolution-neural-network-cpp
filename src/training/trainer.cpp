@@ -5,6 +5,7 @@
 #include <random>
 #include <chrono>
 #include <fstream>
+#include <limits>
 
 Trainer::Trainer(Network& n,
                 SoftmaxCrossEntropyLoss& lf,
@@ -28,11 +29,8 @@ void Trainer::train(
 
     std::ifstream meta("models/best_model_meta.txt");
     if (meta) {
-        int best_epoch;
-        float saved_lr;
-
-        meta >> best_epoch;
-        meta >> saved_lr;
+        meta.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+        meta.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
         meta >> best_test_accuracy;
         meta >> best_test_loss;
     }
@@ -110,10 +108,11 @@ void Trainer::train(
 
             net.save("models/best_model.bin");
             save_metadata("models/best_model_meta.txt",
-                        epoch + 1,
-                        optimizer.lr,
-                        test_accuracy,
-                        test_loss);
+                epoch + 1,
+                optimizer.lr,
+                test_accuracy,
+                test_loss
+            );
         }
         else {
             patience_counter++;
@@ -121,10 +120,11 @@ void Trainer::train(
 
         net.save("models/latest_model.bin");
         save_metadata("models/latest_model_meta.txt",
-                    epoch + 1,
-                    optimizer.lr,
-                    test_accuracy,
-                    test_loss);
+            epoch + 1,
+            optimizer.lr,
+            test_accuracy,
+            test_loss
+        );
         
         auto end = std::chrono::high_resolution_clock::now();
         
@@ -305,12 +305,12 @@ Tensor Trainer::cutout(const Tensor& img, int mask_size, std::mt19937& rng){
     return out;
 }
 
-void save_metadata(const std::string& path,
-                   int epoch,
-                   float lr,
-                   float acc,
-                   float loss)
-{
+void Trainer::save_metadata(const std::string& path,
+    int epoch,
+    float lr,
+    float acc,
+    float loss
+) {
     std::ofstream meta(path);
     meta << epoch << "\n";
     meta << lr << "\n";

@@ -1,8 +1,6 @@
 #include "math/tensor.h"
 #include <algorithm>
 #include <random>
-#include <iostream>
-#include <iomanip>
 
 // Constructors
 Tensor::Tensor()
@@ -276,26 +274,4 @@ Tensor& Tensor::operator/=(float scalar){
         data[i] /= scalar;
     }
     return *this;
-}
-
-
-void Tensor::print() const
-{
-    for(int b = 0; b < batch; b++)
-    {
-        std::cout << "Batch " << b << ":\n";
-        for(int d = 0; d < depth; d++)
-        {
-            std::cout << "Depth " << d << ":\n";
-            for(int r = 0; r < rows; r++)
-            {
-                for(int c = 0; c < cols; c++)
-                {
-                    std::cout << std::setw(8) << (*this)(b, r, c, d) << " ";
-                }
-                std::cout << '\n';
-            }
-            std::cout << '\n';
-        }
-    }
 }

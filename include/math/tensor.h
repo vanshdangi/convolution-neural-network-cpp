@@ -1,5 +1,6 @@
 #pragma once
 #include <vector>
+#include <tuple>
 #include <cassert>
 
 class Tensor
@@ -32,7 +33,7 @@ public:
     Tensor pad(int pad) const;
 
     // Helpers
-    std::tuple<int,int,int,int> Tensor::shape() const;
+    std::tuple<int,int,int,int> shape() const;
     int size() const;
     float max_value() const;
     float min_value() const;
@@ -64,7 +65,4 @@ public:
     Tensor& operator-=(const Tensor& other);
     Tensor& operator*=(float scalar);
     Tensor& operator/=(float scalar);
-
-    // Visualize tensor
-    void print() const;
 };
