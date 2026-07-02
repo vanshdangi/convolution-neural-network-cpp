@@ -12,8 +12,6 @@ compile_commands.json
 # data
 data/*
 
-# Model
-*.bin
 
 # Prerequisites
 *.d
