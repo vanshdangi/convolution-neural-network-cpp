@@ -3,6 +3,9 @@
 #include <iostream>
 #include <omp.h>
 
+SoftmaxCrossEntropyLoss::SoftmaxCrossEntropyLoss(float smoothing)
+    : smoothing(smoothing) {}
+
 float SoftmaxCrossEntropyLoss::forward(const Tensor& logits, const std::vector<int>& labels)
 {
     this->labels = labels;

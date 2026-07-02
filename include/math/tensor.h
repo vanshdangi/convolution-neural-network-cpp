@@ -32,6 +32,7 @@ public:
     Tensor pad(int pad) const;
 
     // Helpers
+    std::tuple<int,int,int,int> Tensor::shape() const;
     int size() const;
     float max_value() const;
     float min_value() const;

@@ -11,7 +11,13 @@ Trainer::Trainer(Network& n,
                 SGD& opt)
     : net(n), loss_fn(lf), optimizer(opt) {}
 
-void Trainer::train(const std::vector<Sample>& train_data, const std::vector<Sample>& test_data, int epochs, int batch_size){
+void Trainer::train(
+    const std::vector<Sample>& train_data,
+    const std::vector<Sample>& test_data,
+    int epochs,
+    int batch_size,
+    bool use_augmentation
+){
     std::cout << "Training Begins...\n";
 
     std::mt19937 rng(std::random_device{}());
@@ -19,6 +25,17 @@ void Trainer::train(const std::vector<Sample>& train_data, const std::vector<Sam
 
     float best_test_loss = std::numeric_limits<float>::max();
     float best_test_accuracy = 0.0f;
+
+    std::ifstream meta("models/best_model_meta.txt");
+    if (meta) {
+        int best_epoch;
+        float saved_lr;
+
+        meta >> best_epoch;
+        meta >> saved_lr;
+        meta >> best_test_accuracy;
+        meta >> best_test_loss;
+    }
     int patience_counter = 0;
 
     for (int epoch = 0; epoch < epochs; ++epoch) {
@@ -47,7 +64,10 @@ void Trainer::train(const std::vector<Sample>& train_data, const std::vector<Sam
             std::vector<int> labels(current_batch);
 
             for (int n = 0; n < current_batch; n++) {
-                Tensor image = augment(shuffled_data[i + n].image, rng);
+                Tensor image = use_augmentation
+                    ? augment(shuffled_data[i + n].image, rng)
+                    : shuffled_data[i + n].image;
+                
                 labels[n] = shuffled_data[i + n].label;
 
                 for (int r = 0; r < image.rows; r++) {
@@ -83,23 +103,28 @@ void Trainer::train(const std::vector<Sample>& train_data, const std::vector<Sam
         auto [test_loss, test_accuracy] = evaluate(test_data, batch_size);
 
         // Save best model/ Patience Counter
-        if (test_accuracy > best_test_accuracy){
+        if (test_accuracy > best_test_accuracy) {
             best_test_accuracy = test_accuracy;
-            
-            net.save("best_model.bin");
-            std::ofstream meta("best_model_meta.txt");
-            meta << epoch + 1 << "\n";
-            meta << optimizer.lr << "\n";
-            meta << test_accuracy << "\n";
-            meta << test_loss << "\n";
+            best_test_loss = test_loss;
+            patience_counter = 0;
+
+            net.save("models/best_model.bin");
+            save_metadata("models/best_model_meta.txt",
+                        epoch + 1,
+                        optimizer.lr,
+                        test_accuracy,
+                        test_loss);
+        }
+        else {
+            patience_counter++;
         }
 
-        net.save("latest_model.bin");
-        std::ofstream meta("latest_model_meta.txt");
-        meta << epoch + 1 << "\n";
-        meta << optimizer.lr << "\n";
-        meta << test_accuracy << "\n";
-        meta << test_loss << "\n";
+        net.save("models/latest_model.bin");
+        save_metadata("models/latest_model_meta.txt",
+                    epoch + 1,
+                    optimizer.lr,
+                    test_accuracy,
+                    test_loss);
         
         auto end = std::chrono::high_resolution_clock::now();
         
@@ -278,4 +303,17 @@ Tensor Trainer::cutout(const Tensor& img, int mask_size, std::mt19937& rng){
     }
 
     return out;
+}
+
+void save_metadata(const std::string& path,
+                   int epoch,
+                   float lr,
+                   float acc,
+                   float loss)
+{
+    std::ofstream meta(path);
+    meta << epoch << "\n";
+    meta << lr << "\n";
+    meta << acc << "\n";
+    meta << loss << "\n";
 }

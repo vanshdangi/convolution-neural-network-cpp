@@ -12,7 +12,13 @@ public:
             SoftmaxCrossEntropyLoss& loss_fn,
             SGD& optimizer);
 
-    void train(const std::vector<Sample>& train_data,const std::vector<Sample>& test_data, int epochs, int batch_size);
+    void train(
+        const std::vector<Sample>& train_data,
+        const std::vector<Sample>& test_data,
+        int epochs,
+        int batch_size,
+        bool use_augmentation = true
+    );
     std::pair<float, float> evaluate(const std::vector<Sample>& test_data, int batch_size);
     
     // Augmentation

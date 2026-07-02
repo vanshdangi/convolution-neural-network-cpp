@@ -13,7 +13,7 @@ int main() {
 
         Network net;
         SGD optimizer(0.02f, 0.0005f, 0.9f);
-        SoftmaxCrossEntropyLoss loss_fn;
+        SoftmaxCrossEntropyLoss loss_fn(0.1f);
 
         Trainer trainer(net, loss_fn, optimizer);
         trainer.train(dataset.train,dataset.test, 150, 32);

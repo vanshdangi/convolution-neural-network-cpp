@@ -3,9 +3,11 @@
 
 class SoftmaxCrossEntropyLoss {
 public:
-    float smoothing = 0.1f;
+    float smoothing;
     Tensor probs;
     std::vector<int> labels;
+
+    SoftmaxCrossEntropyLoss(float smoothing = 0.1f);
 
     float forward(const Tensor& logits, const std::vector<int>& labels);
     Tensor backward();

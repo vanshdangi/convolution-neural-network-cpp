@@ -100,6 +100,10 @@ Tensor Tensor::pad(int pad) const
 }
 
 // Helpers
+std::tuple<int,int,int,int> Tensor::shape() const {
+    return {batch, rows, cols, depth};
+}
+
 int Tensor::size() const{
     return batch * rows * cols * depth;
 }
